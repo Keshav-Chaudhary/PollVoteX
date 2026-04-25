@@ -1,35 +1,35 @@
 /* ═══════════════════════════════════════════════════════════════
-   PollVoteX — Clean Google Material Design System
-   Font: Poppins | Zero emojis | Elevation-first
+   PollVoteX — Modern Election Navigator Design System
+   Font: Poppins | Zero emojis | Elevation-first | Motion-rich
    ═══════════════════════════════════════════════════════════════ */
-:root {
-  --primary: #1a73e8;
-  --primary-hover: #1557b0;
-  --primary-soft: #e8f0fe;
-  --bg: #f1f3f4;
-  --surface: #ffffff;
-  --surface-soft: #f8f9fa;
-  --text: #202124;
-  --text-muted: #5f6368;
-  --border: #dadce0;
-  --success: #34a853;
-  --error: #ea4335;
-  --warning: #fbbc04;
-  --shadow-1: 0 1px 2px rgba(60,64,67,.1), 0 1px 3px rgba(60,64,67,.08);
-  --shadow-2: 0 2px 6px rgba(60,64,67,.15);
-  --shadow-3: 0 4px 16px rgba(60,64,67,.18);
-  --radius: 12px;
-  --radius-sm: 8px;
-  --transition: 180ms cubic-bezier(.4,0,.2,1);
-  --header-height: 56px;
-}
 
-/* ── Reset ─────────────────────────────────────────────────── */
-*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
-body {
-  font-family: 'Poppins', system-ui, -apple-system, sans-serif;
-  background: var(--bg);
+/* ── Design Tokens ─────────────────────────────────────────── */
+:root {
+  /* Primary palette */
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --primary-soft: #dbeafe;
+  --primary-glow: rgba(37, 99, 235, 0.25);
+
+  /* Accent colors */
+  --success: #10b981;
+  --success-soft: #d1fae5;
+  --error: #ef4444;
+  --error-soft: #fee2e2;
+  --warning: #f59e0b;
+  --warning-soft: #fef3c7;
+  --info: #0ea5e9;
+
+  /* Surface colors */
+  --bg: #f8fafc;
+  --bg-elevated: #ffffff;
+  --surface: #ffffff;
+  --surface-soft: #f1f5f9;
+  --surface-hover: #e2e8f0;
+
+  /* Text colors */
+  --text: #0f172a;
+  --text-secondary: #475569;
   color: var(--text);
   line-height: 1.6;
   overflow-x: hidden;
