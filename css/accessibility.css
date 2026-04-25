@@ -1,0 +1,131 @@
+/* ═══════════════════════════════════════════════════════════════
+   PollVoteX — Accessibility Overrides
+   Dark mode, large text, dyslexia font, simple language, focus
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── HIGH CONTRAST / DARK MODE ───────────────────────────────── */
+body.high-contrast {
+  --bg: #121212;
+  --surface: #1e1e1e;
+  --surface-soft: #252525;
+  --text: #e8eaed;
+  --text-muted: #9aa0a6;
+  --border: #3c4043;
+  --primary-soft: rgba(26,115,232,.15);
+  --shadow-1: 0 1px 3px rgba(0,0,0,.4);
+  --shadow-2: 0 2px 8px rgba(0,0,0,.5);
+  --shadow-3: 0 4px 20px rgba(0,0,0,.6);
+}
+body.high-contrast .header {
+  background: rgba(30,30,30,.92);
+  border-bottom-color: var(--border);
+}
+body.high-contrast .header-select,
+body.high-contrast .theme-toggle,
+body.high-contrast .settings-toggle {
+  background: var(--surface-soft);
+  border-color: var(--border);
+  color: var(--text);
+}
+body.high-contrast .settings-drawer {
+  background: var(--surface);
+  border-left-color: var(--border);
+}
+body.high-contrast .settings-close { background: var(--surface-soft); color: var(--text-muted); }
+body.high-contrast .setting-switch { background: #555; }
+body.high-contrast .logo-text { color: var(--text); }
+body.high-contrast .section-nav {
+  background: rgba(18,18,18,.92);
+}
+body.high-contrast .form-input,
+body.high-contrast .form-select {
+  background: var(--surface-soft);
+  border-color: var(--border);
+  color: var(--text);
+}
+body.high-contrast .radio-option label {
+  background: var(--surface-soft);
+  border-color: var(--border);
+  color: var(--text);
+}
+body.high-contrast .input-card {
+  background: var(--surface);
+}
+body.high-contrast .hero { background: var(--bg); }
+body.high-contrast .hero-title { color: var(--text); }
+body.high-contrast .hero-subtitle { color: var(--text-muted); }
+
+body.high-contrast .checklist-checkbox .checkmark {
+  background: var(--surface-soft);
+  border-color: var(--border);
+}
+body.high-contrast .bot-message {
+  background: var(--surface-soft);
+  color: var(--text);
+}
+body.high-contrast .assistant-input {
+  background: var(--surface-soft);
+  border-color: var(--border);
+  color: var(--text);
+}
+body.high-contrast .suggestion-btn {
+  background: var(--surface-soft);
+  border-color: var(--border);
+  color: var(--text-muted);
+}
+body.high-contrast .mock-map-bg {
+  background: linear-gradient(135deg, #1e2a3a, #1a2633, #1e2630, #1a2d1a, #1e2e1e);
+}
+body.high-contrast .mock-map-label {
+  background: var(--surface);
+  color: var(--text);
+}
+body.high-contrast .read-aloud-btn {
+  background: var(--surface-soft);
+  border-color: var(--border);
+  color: var(--text-muted);
+}
+body.high-contrast .reminder-btn {
+  background: var(--surface-soft);
+  border-color: var(--border);
+  color: var(--text);
+}
+body.high-contrast .toast { background: #333; }
+body.high-contrast .footer { background: #0a0a0a; }
+
+/* ── LARGE TEXT ───────────────────────────────────────────────── */
+body.large-text {
+  font-size: 18px;
+}
+body.large-text .hero-title { font-size: clamp(1.8rem, 5vw, 2.6rem); }
+body.large-text .section-title { font-size: 1.3rem; }
+body.large-text .form-input,
+body.large-text .form-select { font-size: 16px; padding: 14px 16px; }
+body.large-text .nav-link { font-size: 14px; padding: 8px 16px; }
+body.large-text .step-title { font-size: 1.1rem; }
+body.large-text .checklist-text { font-size: 1rem; }
+body.large-text .chat-message { font-size: 1rem; }
+
+/* ── DYSLEXIA FONT ───────────────────────────────────────────── */
+body.dyslexia-font,
+body.dyslexia-font * {
+  font-family: 'OpenDyslexic', 'Comic Sans MS', system-ui, sans-serif !important;
+  letter-spacing: .04em;
+  word-spacing: .1em;
+}
+
+/* ── SIMPLE LANGUAGE ─────────────────────────────────────────── */
+body.simple-language .step-description,
+body.simple-language .guidance-message,
+body.simple-language .checklist-text {
+  font-size: .95rem;
+  line-height: 1.8;
+}
+
+/* ── FOCUS MODE ──────────────────────────────────────────────── */
+body.focus-mode .footer,
+body.focus-mode .section-nav,
+body.focus-mode #test-section,
+body.focus-mode .trust-card,
+body.focus-mode .adaptive-hint { display: none !important; }
+body.focus-mode .section { box-shadow: none; border: 1px solid var(--border); }

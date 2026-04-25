@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="PollVoteX — Your Step-by-Step Election Navigator. A smart, interactive system that guides you through the Indian election process based on your personal context.">
+    <meta name="theme-color" content="#1A73E8">
+    <title>PollVoteX — Your Step-by-Step Election Navigator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=OpenDyslexic:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/accessibility.css">
+</head>
+<body>
+
+    <!-- ═══ Header ═══ -->
+    <header class="header" role="banner">
+        <div class="container header-inner">
+            <a href="/" class="logo">
+                <div class="logo-icon" aria-hidden="true">PV</div>
+                <div class="logo-text">Poll<span>VoteX</span></div>
+            </a>
+
+            <div class="header-right">
+                <!-- Language -->
+                <label for="language-selector" class="sr-only">Language</label>
+                <select id="language-selector" class="header-select" aria-label="Select language">
+                    <option value="en">EN</option>
+                    <option value="hi">हिन्दी</option>
+                    <option value="ta">தமிழ்</option>
+                </select>
+
+                <!-- Dark mode toggle -->
+                <button class="theme-toggle" id="toggle-high-contrast" aria-pressed="false" aria-label="Toggle dark mode" title="Toggle dark mode">
+                    <span class="theme-toggle-icon" id="theme-icon">◐</span>
+                </button>
+
+                <!-- Settings gear -->
+                <button class="settings-toggle" id="settings-toggle-btn" aria-label="Accessibility settings" title="Accessibility settings">
+                    <span>⚙</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ═══ Settings Drawer (slides in from right) ═══ -->
+    <div class="settings-overlay" id="settings-overlay"></div>
+    <aside class="settings-drawer" id="settings-drawer" role="dialog" aria-label="Accessibility settings">
+        <div class="settings-header">
+            <h3>Accessibility</h3>
+            <button class="settings-close" id="settings-close-btn" aria-label="Close settings">&times;</button>
+        </div>
+        <div class="settings-body">
+            <div class="setting-item">
+                <div class="setting-info">
+                    <span class="setting-icon">Aa</span>
+                    <div>
+                        <div class="setting-name" data-i18n="simpleLanguage">Simple Language</div>
+                        <div class="setting-desc">Replace jargon with plain words</div>
+                    </div>
+                </div>
+                <button class="setting-switch" id="toggle-simple-language" aria-pressed="false" role="switch"></button>
+            </div>
+            <div class="setting-item">
+                <div class="setting-info">
+                    <span class="setting-icon">T+</span>
+                    <div>
+                        <div class="setting-name" data-i18n="largeText">Large Text</div>
+                        <div class="setting-desc">Increase font sizes</div>
+                    </div>
+                </div>
+                <button class="setting-switch" id="toggle-large-text" aria-pressed="false" role="switch"></button>
+            </div>
+            <div class="setting-item">
+                <div class="setting-info">
+                    <span class="setting-icon">Dy</span>
+                    <div>
+                        <div class="setting-name" data-i18n="dyslexiaFont">Dyslexia Font</div>
+                        <div class="setting-desc">OpenDyslexic typeface</div>
+                    </div>
+                </div>
+                <button class="setting-switch" id="toggle-dyslexia-font" aria-pressed="false" role="switch"></button>
+            </div>
+            <div class="setting-item">
+                <div class="setting-info">
+                    <span class="setting-icon">⊙</span>
+                    <div>
+                        <div class="setting-name" data-i18n="focusMode">Focus Mode</div>
+                        <div class="setting-desc">Hide non-essential UI</div>
+                    </div>
+                </div>
+                <button class="setting-switch" id="toggle-focus-mode" aria-pressed="false" role="switch"></button>
+            </div>
+            <hr class="setting-divider">
+            <button class="setting-action" id="run-tests-btn">
+                Run Tests
+            </button>
+        </div>
+    </aside>
+
+    <main role="main">
+        <!-- ═══ Hero Section ═══ -->
+        <section class="hero" id="hero">
+            <div class="container">
+                <h1 class="hero-title">
+                    <span data-i18n="heroTitle1">Your</span> <span class="highlight" data-i18n="heroTitleHighlight">Step-by-Step</span><br>
+                    <span data-i18n="heroTitle2">Election Navigator</span>
+                </h1>
+                <p class="hero-subtitle" data-i18n="heroSubtitle">
+                    Tell us a few things about yourself, and we'll create a personalized
+                    election journey — from eligibility to casting your vote.
+                </p>
+
+                <!-- SVG Wave -->
+                <div class="hero-wave" aria-hidden="true">
+                    <svg viewBox="0 0 1200 120" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M0,0 C150,80 350,0 500,50 C650,100 800,30 1000,60 C1100,75 1150,50 1200,40 L1200,120 L0,120 Z" fill="var(--surface-2)"/>
+                    </svg>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══ Input Card (overlaps hero via negative margin) ═══ -->
+        <div class="container">
+            <div class="input-card" id="input-card">
+                <h2 class="input-card-title" data-i18n="letsGetStarted">Let's Get Started</h2>
+                <form id="user-input-form" novalidate>
+                    <!-- Age -->
+                    <div class="form-row">
+                        <label class="form-label" for="input-age" data-i18n="yourAge">Your Age</label>
+                        <input type="number" class="form-input" id="input-age"
+                               placeholder="Enter your age" data-i18n="enterAge"
+                               min="1" max="150" required aria-required="true" autocomplete="off">
+                        <div class="form-error" id="age-error" role="alert"></div>
+                    </div>
+
+                    <!-- Location -->
+                    <div class="form-row">
+                        <label class="form-label" for="input-location" data-i18n="yourState">Your State / UT</label>
+                        <select class="form-select" id="input-location" required aria-required="true">
+                            <option value="" data-i18n="selectState">Select your state</option>
+                        </select>
+                        <div class="form-error" id="location-error" role="alert"></div>
+                    </div>
+
+                    <!-- Registration Status -->
+                    <div class="form-row">
+                        <label class="form-label" data-i18n="registeredToVote">Are you registered to vote?</label>
+                        <div class="radio-group" role="radiogroup" aria-label="Voter registration status">
+                            <div class="radio-option">
+                                <input type="radio" name="registration-status" id="reg-yes" value="yes">
+                                <label for="reg-yes"><span data-i18n="yes">Yes</span></label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="registration-status" id="reg-no" value="no">
+                                <label for="reg-no"><span data-i18n="no">No</span></label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="registration-status" id="reg-unsure" value="not-sure">
+                                <label for="reg-unsure"><span data-i18n="notSure">Not Sure</span></label>
+                            </div>
+                        </div>
+                        <div class="form-error" id="status-error" role="alert"></div>
+                    </div>
+
+                    <!-- Persona Selector -->
+                    <div class="form-row">
+                        <label class="form-label" for="input-persona" data-i18n="selectPersona">I am a...</label>
+                        <select class="form-select" id="input-persona">
+                            <!-- Populated by JS -->
+                        </select>
+                    </div>
+
+                    <!-- Scenario Selector -->
+                    <div class="form-row">
+                        <label class="form-label" for="input-scenario" data-i18n="selectScenario">My situation...</label>
+                        <select class="form-select" id="input-scenario">
+                            <!-- Populated by JS -->
+                        </select>
+                    </div>
+
+                    <!-- Submit -->
+                    <div class="form-row">
+                        <button type="submit" class="btn-primary" id="submit-btn" data-i18n="generateJourney">
+                            Generate My Election Journey
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ═══ Section Navigation ═══ -->
+        <nav class="section-nav container" id="section-nav" role="navigation" aria-label="Results sections">
+            <a href="#guidance-section" class="nav-link"><span data-i18n="overview">Overview</span></a>
+            <a href="#journey-section" class="nav-link"><span data-i18n="journey">Journey</span></a>
+            <a href="#checklist-section" class="nav-link"><span data-i18n="checklist">Checklist</span></a>
+            <a href="#timeline-section" class="nav-link"><span data-i18n="timeline">Timeline</span></a>
+            <a href="#map-section" class="nav-link"><span data-i18n="boothFinder">Booth Finder</span></a>
+            <a href="#calendar-section" class="nav-link"><span data-i18n="reminders">Reminders</span></a>
+            <a href="#assistant-section" class="nav-link"><span data-i18n="assistant">Assistant</span></a>
+        </nav>
+
+        <!-- ═══ Results Section ═══ -->
+        <div id="results-section">
+            <div class="container">
+
+                <!-- Guidance Banner -->
+                <section class="section" id="guidance-section">
+                    <div id="guidance-banner"></div>
+                    <div id="election-countdown" class="election-countdown"></div>
+                </section>
+
+                <!-- Next Best Action -->
+                <section class="section" id="next-action-section">
+                    <div id="next-action-container"></div>
+                </section>
+
+                <!-- Journey Tracker -->
+                <section class="section" id="journey-section">
+                    <div class="section-header-row">
+                        <div>
+                            <h2 class="section-title" data-i18n-html="yourJourney">Your Election Journey</h2>
+                            <p class="section-subtitle" data-i18n="journeySubtitle">Follow these steps to navigate the election process. Click any step for details.</p>
+                        </div>
+                        <button class="read-aloud-btn" onclick="Voice.readSection('journey-container')" aria-label="Read journey aloud" title="Read aloud"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg></button>
+                    </div>
+                    <div id="journey-container"></div>
+                </section>
+
+                <!-- Checklist -->
+                <section class="section" id="checklist-section">
+                    <h2 class="section-title" data-i18n-html="yourChecklist">Your Checklist</h2>
+                    <p class="section-subtitle" data-i18n="checklistSubtitle">Track your preparation progress. Your progress is saved during this session.</p>
+                    <div id="checklist-container"></div>
+                </section>
+
+                <!-- Timeline -->
+                <section class="section" id="timeline-section">
+                    <h2 class="section-title" data-i18n-html="electionTimeline">Election Timeline</h2>
+                    <p class="section-subtitle" data-i18n="timelineSubtitle">Important dates and milestones for the upcoming election.</p>
+                    <div id="timeline-container"></div>
+                </section>
+
+                <!-- Polling Booth Map -->
+                <section class="section" id="map-section">
+                    <h2 class="section-title" data-i18n-html="boothFinderTitle">Polling Booth Finder</h2>
+                    <p class="section-subtitle" data-i18n="boothFinderSubtitle">Find your nearest polling booth location.</p>
+                    <div id="map-container"></div>
+                </section>
+
+                <!-- Calendar Reminders -->
+                <section class="section" id="calendar-section">
+                    <div id="calendar-container"></div>
+                </section>
+
+                <!-- Smart Assistant -->
+                <section class="section" id="assistant-section">
+                    <h2 class="section-title" data-i18n-html="smartAssistant">Smart Assistant</h2>
+                    <p class="section-subtitle" data-i18n="assistantSubtitle">Have questions about elections? Ask our AI-powered assistant.</p>
+                    <div id="assistant-container"></div>
+                    <!-- Voice input button (shown if supported) -->
+                    <button class="voice-fab" id="voice-input-btn" style="display:none" aria-label="Ask by voice" title="Ask by voice">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+                    </button>
+                </section>
+
+                <!-- Trust & Transparency -->
+                <section class="section" id="trust-section">
+                    <div id="trust-container"></div>
+                </section>
+
+                <!-- Reset -->
+                <section class="section" style="text-align: center;">
+                    <button class="btn-secondary" id="reset-btn" onclick="App.resetSession()">
+                        <span data-i18n="startOver">Start Over</span>
+                    </button>
+                </section>
+            </div>
+        </div>
+
+        <!-- ═══ Test Section ═══ -->
+        <section id="test-section" class="container">
+            <div class="section">
+                <h2 class="section-title">Test Suite</h2>
+                <p class="section-subtitle">Automated scenario tests for the decision engine.</p>
+                <div id="test-container"></div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ═══ Footer ═══ -->
+    <footer class="footer" role="contentinfo">
+        <div class="container">
+            <div class="footer-links">
+                <a href="https://eci.gov.in" target="_blank" rel="noopener">Election Commission of India</a>
+                <a href="https://nvsp.in" target="_blank" rel="noopener">NVSP Portal</a>
+                <a href="https://voters.eci.gov.in" target="_blank" rel="noopener">Voter Helpline</a>
+            </div>
+            <p data-i18n="footerDisclaimer">PollVoteX is an educational tool. Always verify information with official sources.</p>
+            <p style="margin-top: 4px; opacity: 0.7;" data-i18n="footerPrivacy">No personal data is stored permanently. Session data is cleared when you close the tab.</p>
+        </div>
+    </footer>
+
+    <!-- ═══ Scripts ═══ -->
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/i18n.js"></script>
+    <script src="js/personas.js"></script>
+    <script src="js/voice.js"></script>
+    <script src="js/decisionEngine.js"></script>
+    <script src="js/journeyTracker.js"></script>
+    <script src="js/checklist.js"></script>
+    <script src="js/timeline.js"></script>
+    <script src="js/assistant.js"></script>
+    <script src="js/googleServices.js"></script>
+    <script src="js/accessibility.js"></script>
+    <script src="js/tests.js"></script>
+    <script src="js/app.js"></script>
+    <script>document.getElementById('run-tests-btn').addEventListener('click', App.runTests);</script>
+</body>
+</html>
