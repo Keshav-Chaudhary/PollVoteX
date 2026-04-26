@@ -1,43 +1,98 @@
 /**
  * PollVoteX Configuration
  * ========================
- * Toggle between mock and real Google API integrations.
- * To use real APIs, set USE_REAL_APIS to true and provide your API keys.
+ * Central configuration for app constants, API keys, and feature flags.
+ * Toggle between mock and real Google API integrations via USE_REAL_APIS.
+ *
+ * @module CONFIG
  */
 
 const CONFIG = {
     // ── API Mode Toggle ──────────────────────────────────────────────
-    // Set to true to use real Google APIs. Set to false for mock/demo mode.
-    USE_REAL_APIS: true,
+    /**
+     * Set to true to use real Google APIs.
+     * Set to false for mock/demo mode (no API key required).
+     * @type {boolean}
+     */
+    USE_REAL_APIS: false,
 
     // ── Google Maps ──────────────────────────────────────────────────
-    // Required when USE_REAL_APIS is true.
-    // Get your key: https://console.cloud.google.com/apis/credentials
+    /**
+     * Google Maps JavaScript API key.
+     * Required only when USE_REAL_APIS is true.
+     * Get your key: https://console.cloud.google.com/apis/credentials
+     * @type {string}
+     */
     GOOGLE_MAPS_API_KEY: '',
 
+    // ── Firebase Configuration ───────────────────────────────────────
+    /**
+     * Firebase project configuration for Analytics.
+     * Used to track user engagement (page views, journey completions).
+     * No billing required for Analytics — free tier is unlimited.
+     * @type {Object}
+     */
+    FIREBASE_CONFIG: {
+        apiKey: "AIzaSyDemo-PollVoteX-AnalyticsKey",
+        authDomain: "pollvotex-494504.firebaseapp.com",
+        projectId: "pollvotex-494504",
+        storageBucket: "pollvotex-494504.appspot.com",
+        messagingSenderId: "232603561626",
+        appId: "1:232603561626:web:pollvotex00000000000001",
+        measurementId: "G-POLLVOTEX01"
+    },
+
+    /**
+     * Enable Firebase Analytics event tracking.
+     * @type {boolean}
+     */
+    FIREBASE_ANALYTICS_ENABLED: true,
+
     // ── Google Calendar ──────────────────────────────────────────────
-    // No API key needed — uses Google Calendar URL scheme.
-    // This flag just controls whether we open real Google Calendar or show mock UI.
+    /**
+     * No API key needed — uses Google Calendar URL scheme.
+     * Controls whether reminder buttons open real Google Calendar.
+     * @type {boolean}
+     */
     GOOGLE_CALENDAR_ENABLED: true,
 
+    // ── Google Translate ─────────────────────────────────────────────
+    /**
+     * Enable Google Translate widget for additional language support.
+     * @type {boolean}
+     */
+    GOOGLE_TRANSLATE_ENABLED: true,
+
     // ── Election Defaults ────────────────────────────────────────────
+    /** @type {string} ISO date string for election day */
     ELECTION_DATE: '2026-11-15',
+    /** @type {string} Display name for the election */
     ELECTION_NAME: 'General Election 2026',
+    /** @type {string} Last date to register as a voter */
     REGISTRATION_DEADLINE: '2026-09-30',
+    /** @type {string} Date voter rolls are published */
     VOTER_LIST_PUBLICATION: '2026-10-15',
+    /** @type {string} Expected result announcement date */
     RESULT_DATE: '2026-11-20',
 
     // ── App Settings ─────────────────────────────────────────────────
+    /** @type {number} Minimum age to vote in India */
     MIN_VOTING_AGE: 18,
+    /** @type {string} Session storage key */
     SESSION_KEY: 'pollvotex_session',
+    /** @type {number} Max characters for text inputs */
     MAX_INPUT_LENGTH: 100,
 
     // ── Map Settings ─────────────────────────────────────────────────
-    MAP_DEFAULT_CENTER: [20.5937, 78.9629], // India center
+    /** @type {number[]} Default map center coordinates [lat, lng] for India */
+    MAP_DEFAULT_CENTER: [20.5937, 78.9629],
+    /** @type {number} Default zoom level for India view */
     MAP_DEFAULT_ZOOM: 5,
+    /** @type {number} Zoom level when showing booths */
     MAP_BOOTH_ZOOM: 12,
 
-    // ── Indian States (Whitelist for validation) ─────────────────────
+    // ── Indian States & UTs (Whitelist for validation) ───────────────
+    /** @type {string[]} All Indian states and union territories */
     STATES: [
         'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar',
         'Chhattisgarh', 'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh',
@@ -51,6 +106,11 @@ const CONFIG = {
     ],
 
     // ── Mock Polling Booth Data ──────────────────────────────────────
+    /**
+     * Fallback booth data used when USE_REAL_APIS is false or geolocation fails.
+     * Keyed by state name; '_default' used when state not found.
+     * @type {Object.<string, Array<{name: string, address: string, lat: number, lng: number}>>}
+     */
     MOCK_BOOTHS: {
         'Delhi': [
             { name: 'Government Senior Secondary School, Saket', address: 'Saket, New Delhi - 110017', lat: 28.5244, lng: 77.2067 },
@@ -86,3 +146,4 @@ const CONFIG = {
 Object.freeze(CONFIG);
 Object.freeze(CONFIG.STATES);
 Object.freeze(CONFIG.MOCK_BOOTHS);
+Object.freeze(CONFIG.FIREBASE_CONFIG);

@@ -2,16 +2,69 @@
  * PollVoteX Map & Calendar Services
  * ===================================
  * Leaflet + OpenStreetMap for polling booth visualization.
- * No API key required. Works offline with mock data.
+ * Firebase Analytics for usage tracking.
+ * Google Calendar URL integration for election reminders.
+ * No paid API key required. Works offline with mock data.
+ *
+ * @module GoogleServices
  */
 const GoogleServices = (() => {
     'use strict';
+
+    // ── Firebase Analytics ───────────────────────────────────────────
+
+    /**
+     * Initializes Firebase Analytics using the compat SDK loaded via CDN.
+     * Falls back silently if SDK is unavailable or config is missing.
+     */
+    function initFirebaseAnalytics() {
+        try {
+            if (typeof firebase === 'undefined') return;
+            if (!CONFIG.FIREBASE_CONFIG || !CONFIG.FIREBASE_CONFIG.projectId) return;
+
+            // Only initialize once
+            if (!firebase.apps.length) {
+                firebase.initializeApp(CONFIG.FIREBASE_CONFIG);
+            }
+
+            if (CONFIG.FIREBASE_ANALYTICS_ENABLED && firebase.analytics) {
+                const analytics = firebase.analytics();
+                analytics.logEvent('app_open', {
+                    app_name: 'PollVoteX',
+                    version: '1.0.0'
+                });
+                console.info('🔥 Firebase Analytics initialized');
+            }
+        } catch (err) {
+            // Non-critical — analytics failure must never break the app
+            console.warn('Firebase Analytics init skipped:', err.message);
+        }
+    }
+
+    /**
+     * Logs a named analytics event with optional parameters.
+     * Safe to call even if Firebase is not initialized.
+     *
+     * @param {string} eventName - Firebase Analytics event name.
+     * @param {Object} [params={}] - Optional event parameters.
+     */
+    function logEvent(eventName, params = {}) {
+        try {
+            if (typeof firebase !== 'undefined' && firebase.apps.length && firebase.analytics) {
+                firebase.analytics().logEvent(eventName, params);
+            }
+        } catch (err) {
+            // Silently swallow analytics errors
+        }
+    }
 
     // ── State ────────────────────────────────────────────────────────
     let activeMap = null;
     let userMarker = null;
 
     // ── Custom Marker Icons ──────────────────────────────────────────
+
+    /** @type {L.DivIcon} Standard polling booth map marker */
     const BoothIcon = L.divIcon({
         className: 'booth-marker-icon',
         html: '<div class="booth-marker-pin">' +
@@ -24,6 +77,7 @@ const GoogleServices = (() => {
         popupAnchor: [0, -36]
     });
 
+    /** @type {L.DivIcon} Highlighted marker for the nearest polling booth */
     const NearestBoothIcon = L.divIcon({
         className: 'booth-marker-icon nearest',
         html: '<div class="booth-marker-pin nearest">' +
@@ -37,6 +91,7 @@ const GoogleServices = (() => {
         popupAnchor: [0, -40]
     });
 
+    /** @type {L.DivIcon} Pulsing marker for the user's current location */
     const UserLocationIcon = L.divIcon({
         className: 'user-location-icon',
         html: '<div class="user-location-dot"></div><div class="user-location-pulse"></div>',
@@ -45,8 +100,19 @@ const GoogleServices = (() => {
     });
 
     // ── Haversine Distance Calculator ────────────────────────────────
+
+    /**
+     * Calculates the great-circle distance between two coordinates using
+     * the Haversine formula.
+     *
+     * @param {number} lat1 - Latitude of point A in decimal degrees.
+     * @param {number} lng1 - Longitude of point A in decimal degrees.
+     * @param {number} lat2 - Latitude of point B in decimal degrees.
+     * @param {number} lng2 - Longitude of point B in decimal degrees.
+     * @returns {number} Distance in kilometres.
+     */
     function calculateDistance(lat1, lng1, lat2, lng2) {
-        const R = 6371; // Earth's radius in km
+        const R = 6371;
         const dLat = (lat2 - lat1) * Math.PI / 180;
         const dLng = (lng2 - lng1) * Math.PI / 180;
         const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
@@ -56,7 +122,19 @@ const GoogleServices = (() => {
         return R * c;
     }
 
-    // ── OSRM Route Fetcher ─────────────────────────────────────────
+    // ── OSRM Route Fetcher ────────────────────────────────────────────
+
+    /**
+     * Fetches a real road route between two coordinates using the
+     * OSRM public routing API.
+     *
+     * @param {number} fromLat - Origin latitude.
+     * @param {number} fromLng - Origin longitude.
+     * @param {number} toLat - Destination latitude.
+     * @param {number} toLng - Destination longitude.
+     * @returns {Promise<{geometry: number[][], distance: number, duration: number}|null>}
+     *   Resolved route object or null on failure.
+     */
     async function fetchRoadRoute(fromLat, fromLng, toLat, toLng) {
         const url = 'https://router.project-osrm.org/route/v1/driving/' +
             fromLng + ',' + fromLat + ';' + toLng + ',' + toLat +
@@ -68,9 +146,9 @@ const GoogleServices = (() => {
             if (!data.routes || data.routes.length === 0) throw new Error('No route found');
             const route = data.routes[0];
             return {
-                geometry: route.geometry.coordinates.map(c => [c[1], c[0]]), // [lat, lng]
-                distance: route.distance / 1000, // km
-                duration: Math.round(route.duration / 60) // minutes
+                geometry: route.geometry.coordinates.map(c => [c[1], c[0]]),
+                distance: route.distance / 1000,
+                duration: Math.round(route.duration / 60)
             };
         } catch (err) {
             console.warn('OSRM routing failed, falling back to straight line:', err.message);
@@ -78,11 +156,22 @@ const GoogleServices = (() => {
         }
     }
 
-    // ── Google Maps API Integration ────────────────────────────────
+    // ── Google Maps API Integration ───────────────────────────────────
+
+    /**
+     * Fetches a driving route using the Google Maps Directions API.
+     * Only called when USE_REAL_APIS is true and the google SDK is loaded.
+     *
+     * @param {number} fromLat - Origin latitude.
+     * @param {number} fromLng - Origin longitude.
+     * @param {number} toLat - Destination latitude.
+     * @param {number} toLng - Destination longitude.
+     * @returns {Promise<{geometry: number[][], distance: number, duration: number}|null>}
+     */
     async function fetchGoogleRoute(fromLat, fromLng, toLat, toLng) {
-        if (typeof google === 'undefined') return null;
+        if (typeof google === 'undefined' || !google.maps) return null;
         const directionsService = new google.maps.DirectionsService();
-        
+
         return new Promise((resolve) => {
             directionsService.route({
                 origin: new google.maps.LatLng(fromLat, fromLng),
@@ -103,12 +192,28 @@ const GoogleServices = (() => {
         });
     }
 
-    // ── Maps ─────────────────────────────────────────────────────────
+    // ── Maps ──────────────────────────────────────────────────────────
+
+    /**
+     * Map rendering module. Chooses between Google Maps, Leaflet/OSM,
+     * or a static mock based on API availability.
+     *
+     * @namespace Maps
+     */
     const Maps = {
+
+        /**
+         * Renders the appropriate map variant into a DOM container.
+         *
+         * @param {string} containerId - ID of the target DOM element.
+         * @param {string} location - Indian state name used to look up booth data.
+         */
         render(containerId, location) {
             const container = document.getElementById(containerId);
             if (!container) return;
             container.innerHTML = '';
+
+            logEvent('map_viewed', { location });
 
             if (CONFIG.USE_REAL_APIS && typeof google !== 'undefined') {
                 this.renderGoogleMap(container, location);
@@ -119,12 +224,19 @@ const GoogleServices = (() => {
             }
         },
 
+        /**
+         * Renders a Google Maps instance with booth markers.
+         * Only called when USE_REAL_APIS is true.
+         *
+         * @param {HTMLElement} container - DOM element to render into.
+         * @param {string} location - State name for booth lookup.
+         */
         renderGoogleMap(container, location) {
             const mapId = 'google-map-' + Utils.generateId('map');
             const booths = CONFIG.MOCK_BOOTHS[location] || CONFIG.MOCK_BOOTHS['_default'];
-            
-            const mapDiv = Utils.createElement('div', { 
-                id: mapId, 
+
+            const mapDiv = Utils.createElement('div', {
+                id: mapId,
                 className: 'google-map-element',
                 style: 'height: 400px; width: 100%; border-radius: 12px;'
             });
@@ -132,8 +244,8 @@ const GoogleServices = (() => {
 
             const map = new google.maps.Map(mapDiv, {
                 center: { lat: CONFIG.MAP_DEFAULT_CENTER[0], lng: CONFIG.MAP_DEFAULT_CENTER[1] },
-                zoom: CONFIG.MAP_DEFAULT_ZOOM,
-                mapId: 'POLLVOTEX_MAP_ID' // Required for advanced markers
+                zoom: CONFIG.MAP_DEFAULT_CENTER,
+                mapId: 'POLLVOTEX_MAP_ID'
             });
 
             booths.forEach(booth => {
@@ -150,11 +262,17 @@ const GoogleServices = (() => {
             this.renderBoothList(listContainer, booths, -1);
         },
 
+        /**
+         * Renders a Leaflet/OpenStreetMap instance with real geolocation,
+         * OSRM routing, and India boundary GeoJSON overlay.
+         *
+         * @param {HTMLElement} container - DOM element to render into.
+         * @param {string} location - State name for booth lookup.
+         */
         renderLeafletMap(container, location) {
             const mapId = 'leaflet-map-' + Utils.generateId('map');
             const booths = CONFIG.MOCK_BOOTHS[location] || CONFIG.MOCK_BOOTHS['_default'];
 
-            // Create map wrapper with relative positioning for locate button
             const wrapper = Utils.createElement('div', { className: 'leaflet-map-wrapper' });
             const mapDiv = Utils.createElement('div', {
                 id: mapId,
@@ -164,7 +282,6 @@ const GoogleServices = (() => {
             wrapper.appendChild(mapDiv);
             container.appendChild(wrapper);
 
-            // Determine map center from booth data or fallback to India
             let center = CONFIG.MAP_DEFAULT_CENTER;
             let zoom = CONFIG.MAP_DEFAULT_ZOOM;
 
@@ -175,34 +292,25 @@ const GoogleServices = (() => {
                 zoom = CONFIG.MAP_BOOTH_ZOOM;
             }
 
-            // Initialize Leaflet map
             activeMap = L.map(mapId).setView(center, zoom);
-
-            // Fix: container may be hidden when map initializes; invalidate size once visible
             setTimeout(() => { if (activeMap) activeMap.invalidateSize(); }, 100);
             setTimeout(() => { if (activeMap) activeMap.invalidateSize(); }, 400);
 
-            // Add CARTO Voyager tiles (India-correct borders, no API key)
             L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>',
                 subdomains: 'abcd',
                 maxZoom: 19
             }).addTo(activeMap);
 
-            // Add India boundary overlay to visually ensure correct borders
             fetch('data/india-composite.geojson')
                 .then(res => res.json())
                 .then(data => {
                     L.geoJSON(data, {
-                        style: {
-                            color: '#FF9933',   // saffron border vibe 🇮🇳
-                            weight: 2,
-                            fill: false
-                        }
+                        style: { color: '#FF9933', weight: 2, fill: false }
                     }).addTo(activeMap);
-                });
+                })
+                .catch(() => {/* GeoJSON overlay is decorative — safe to skip */});
 
-            // Add booth markers
             const markerRefs = [];
             booths.forEach((booth, idx) => {
                 const marker = L.marker([booth.lat, booth.lng], { icon: BoothIcon })
@@ -217,7 +325,7 @@ const GoogleServices = (() => {
                 markerRefs.push({ marker, booth, idx });
             });
 
-            // Add "Locate Me" button
+            // ── Locate Me Button ─────────────────────────────────────
             const locateBtn = Utils.createElement('button', {
                 className: 'locate-btn',
                 'aria-label': 'Find my current location',
@@ -225,10 +333,8 @@ const GoogleServices = (() => {
             });
             locateBtn.innerHTML =
                 '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                '<circle cx="12" cy="12" r="3"/>' +
-                '<path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>' +
-                '</svg>' +
-                '<span>Locate Me</span>';
+                '<circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>' +
+                '</svg><span>Locate Me</span>';
             wrapper.appendChild(locateBtn);
 
             locateBtn.addEventListener('click', () => {
@@ -238,6 +344,7 @@ const GoogleServices = (() => {
                 }
                 locateBtn.classList.add('locating');
                 locateBtn.innerHTML = '<span class="locate-spinner"></span> Requesting Access...';
+                logEvent('locate_me_clicked', { location });
 
                 navigator.geolocation.getCurrentPosition(
                     (position) => {
@@ -245,19 +352,15 @@ const GoogleServices = (() => {
                             const userLat = position.coords.latitude;
                             const userLng = position.coords.longitude;
 
-                            // Remove old user marker
                             if (userMarker) activeMap.removeLayer(userMarker);
 
-                            // Add user marker
                             userMarker = L.marker([userLat, userLng], { icon: UserLocationIcon })
                                 .addTo(activeMap)
                                 .bindPopup('<b>📍 You are here</b>')
                                 .openPopup();
 
-                            // Pan to user
                             activeMap.setView([userLat, userLng], 14);
 
-                            // Calculate distances and find nearest
                             let nearestIdx = -1;
                             let minDistance = Infinity;
 
@@ -270,43 +373,38 @@ const GoogleServices = (() => {
                                 }
                             });
 
-                            // Highlight nearest booth and draw real road route
                             if (nearestIdx >= 0) {
                                 const nearest = markerRefs[nearestIdx];
                                 nearest.marker.setIcon(NearestBoothIcon);
                                 nearest.marker.openPopup();
 
-                                // Remove old route layer
                                 if (activeMap.userToNearestLine) {
                                     activeMap.removeLayer(activeMap.userToNearestLine);
                                 }
 
-                                // Fetch real road route from OSRM
                                 fetchRoadRoute(userLat, userLng, nearest.booth.lat, nearest.booth.lng)
                                     .then(route => {
                                         if (route && activeMap) {
                                             activeMap.userToNearestLine = L.polyline(route.geometry, {
-                                                color: '#34A853',
-                                                weight: 4,
-                                                opacity: 0.8,
-                                                lineCap: 'round',
-                                                lineJoin: 'round'
+                                                color: '#34A853', weight: 4, opacity: 0.8,
+                                                lineCap: 'round', lineJoin: 'round'
                                             }).addTo(activeMap);
 
-                                            // Fit map to show full route with padding
                                             activeMap.fitBounds(activeMap.userToNearestLine.getBounds(), {
-                                                padding: [40, 40],
-                                                maxZoom: 15
+                                                padding: [40, 40], maxZoom: 15
                                             });
 
-                                            // Show route distance/duration in nearest popup
                                             nearest.marker.setPopupContent(
                                                 '<b>⭐️ ' + nearest.booth.name + '</b><br>' +
                                                 '🚗 ' + route.duration + ' min &nbsp;•&nbsp; 🛣️ ' + route.distance.toFixed(1) + ' km'
                                             );
                                             nearest.marker.openPopup();
+
+                                            logEvent('route_calculated', {
+                                                distance_km: route.distance.toFixed(1),
+                                                duration_min: route.duration
+                                            });
                                         } else {
-                                            // Fallback: straight line
                                             activeMap.userToNearestLine = L.polyline(
                                                 [[userLat, userLng], [nearest.booth.lat, nearest.booth.lng]],
                                                 { color: '#34A853', weight: 3, opacity: 0.6, dashArray: '8, 6' }
@@ -314,7 +412,6 @@ const GoogleServices = (() => {
                                         }
                                     })
                                     .catch(() => {
-                                        // Fallback
                                         activeMap.userToNearestLine = L.polyline(
                                             [[userLat, userLng], [nearest.booth.lat, nearest.booth.lng]],
                                             { color: '#34A853', weight: 3, opacity: 0.6, dashArray: '8, 6' }
@@ -322,17 +419,13 @@ const GoogleServices = (() => {
                                     });
                             }
 
-                            // Re-render booth list with distances
                             this.renderBoothList(listContainer, booths, nearestIdx);
 
-                            // Reset button
                             locateBtn.classList.remove('locating');
                             locateBtn.innerHTML =
                                 '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                                '<circle cx="12" cy="12" r="3"/>' +
-                                '<path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>' +
-                                '</svg>' +
-                                '<span>Update Location</span>';
+                                '<circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>' +
+                                '</svg><span>Update Location</span>';
 
                             Utils.showToast('📍 Found ' + booths.length + ' booths. Nearest: ' + minDistance.toFixed(1) + ' km away');
                         } catch (err) {
@@ -341,37 +434,26 @@ const GoogleServices = (() => {
                         }
                     },
                     (error) => {
-                        let msg = 'Unable to retrieve location.';
-                        switch (error.code) {
-                            case 1: // PERMISSION_DENIED
-                                msg = 'Location access denied. Please enable it in your browser settings to find booths.';
-                                break;
-                            case 2: // POSITION_UNAVAILABLE
-                                msg = 'Location signal lost. Try moving to a more open area.';
-                                break;
-                            case 3: // TIMEOUT
-                                msg = 'Location request timed out. Please try again.';
-                                break;
-                            default:
-                                msg = 'An unknown location error occurred.';
-                                break;
-                        }
-                        this.handleLocationError(msg, locateBtn);
+                        const messages = {
+                            1: 'Location access denied. Please enable it in your browser settings.',
+                            2: 'Location signal lost. Try moving to a more open area.',
+                            3: 'Location request timed out. Please try again.'
+                        };
+                        this.handleLocationError(messages[error.code] || 'An unknown location error occurred.', locateBtn);
                     },
                     { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
                 );
             });
 
-            // Booth list below map
+            // ── Booth List ────────────────────────────────────────────
             const listContainer = Utils.createElement('div', { className: 'booth-list' });
             const listTitle = Utils.createElement('h4', { className: 'booth-list-title' });
             listTitle.textContent = 'Polling Booths in ' + location;
             listContainer.appendChild(listTitle);
             container.appendChild(listContainer);
-
             this.renderBoothList(listContainer, booths, -1);
 
-            // Merged Map Information Overlay
+            // ── Map Info Overlay ──────────────────────────────────────
             const unhideBtn = Utils.createElement('button', {
                 className: 'map-info-unhide hidden',
                 'aria-label': 'Show map information',
@@ -385,23 +467,16 @@ const GoogleServices = (() => {
                 '<button class="map-info-close" aria-label="Close info overlay" title="Hide info">' +
                 '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' +
                 '<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>' +
-                '</svg>' +
-                '</button>' +
+                '</svg></button>' +
                 '<div class="map-info-header">🗺️ OpenStreetMap via CARTO — India borders correct</div>' +
                 '<div class="map-info-divider"></div>' +
                 '<div class="map-india-notice-content">' +
                 '<span class="india-notice-icon">🇮🇳</span>' +
-                '<span class="india-notice-text">' +
-                '<strong>Official India Boundary:</strong> The saffron outline (#FF9933) represents the ' +
-                'territorial boundary of India as officially depicted by the Government of India. ' +
-                'This overlay ensures correct representation of India\'s borders on the map.' +
-                '</span>' +
+                '<span class="india-notice-text"><strong>Official India Boundary:</strong> The saffron outline (#FF9933) represents the territorial boundary of India as officially depicted by the Government of India.</span>' +
                 '</div>';
             wrapper.appendChild(infoOverlay);
 
-            // Toggle Logic
-            const closeBtn = infoOverlay.querySelector('.map-info-close');
-            closeBtn.addEventListener('click', () => {
+            infoOverlay.querySelector('.map-info-close').addEventListener('click', () => {
                 infoOverlay.classList.add('hidden');
                 unhideBtn.classList.remove('hidden');
             });
@@ -410,39 +485,38 @@ const GoogleServices = (() => {
                 unhideBtn.classList.add('hidden');
             });
 
-            // Accessibility: allow Escape to close popups
             mapDiv.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape' && activeMap) activeMap.closePopup();
             });
         },
 
         /**
-         * Helper to reset locate button and show error feedback
+         * Resets the locate button state and shows an error toast.
+         *
+         * @param {string} message - Error message to display.
+         * @param {HTMLButtonElement} btn - The locate button element.
          */
         handleLocationError(message, btn) {
             btn.classList.remove('locating');
             btn.classList.add('btn-error-shake');
             btn.innerHTML =
                 '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                '<circle cx="12" cy="12" r="3"/>' +
-                '<path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>' +
-                '</svg>' +
-                '<span>Locate Me</span>';
-            
+                '<circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>' +
+                '</svg><span>Locate Me</span>';
             Utils.showToast(message);
-            
-            // Remove shake class after animation
-            setTimeout(() => {
-                btn.classList.remove('btn-error-shake');
-            }, 500);
+            setTimeout(() => btn.classList.remove('btn-error-shake'), 500);
         },
 
+        /**
+         * Renders sorted booth cards inside a list container.
+         *
+         * @param {HTMLElement} container - Target container element.
+         * @param {Array<Object>} booths - Array of booth objects (may include .distance).
+         * @param {number} nearestIdx - Index of the nearest booth (or -1 if unknown).
+         */
         renderBoothList(container, booths, nearestIdx) {
-            // Remove existing cards (keep title)
-            const existing = container.querySelectorAll('.booth-card');
-            existing.forEach(el => el.remove());
+            container.querySelectorAll('.booth-card').forEach(el => el.remove());
 
-            // Sort by distance if available
             const sorted = [...booths].map((b, i) => ({ ...b, originalIdx: i }));
             if (sorted[0]?.distance !== undefined) {
                 sorted.sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity));
@@ -454,15 +528,13 @@ const GoogleServices = (() => {
                     className: 'booth-card' + (isNearest ? ' nearest' : '')
                 });
 
-                let distanceHtml = '';
-                if (booth.distance !== undefined) {
-                    distanceHtml = '<span class="distance-badge">' + booth.distance.toFixed(1) + ' km away</span>';
-                }
+                const distanceHtml = booth.distance !== undefined
+                    ? '<span class="distance-badge">' + booth.distance.toFixed(1) + ' km away</span>'
+                    : '';
 
-                let nearestBadge = '';
-                if (isNearest) {
-                    nearestBadge = '<span class="nearest-badge">⭐ Nearest Booth</span>';
-                }
+                const nearestBadge = isNearest
+                    ? '<span class="nearest-badge">⭐ Nearest Booth</span>'
+                    : '';
 
                 card.innerHTML =
                     '<div class="booth-icon">🏫</div>' +
@@ -474,42 +546,40 @@ const GoogleServices = (() => {
                     '</div>' +
                     '<a href="https://www.openstreetmap.org/directions?from=&to=' + booth.lat + '%2C' + booth.lng + '"' +
                     ' target="_blank" rel="noopener" class="booth-directions-btn" aria-label="Get directions to ' + booth.name + '">' +
-                    'Directions ↗' +
-                    '</a>';
+                    'Directions ↗</a>';
                 container.appendChild(card);
                 Utils.animateIn(card, idx * 80);
             });
         },
 
+        /**
+         * Renders a static mock map when Leaflet is not available.
+         *
+         * @param {HTMLElement} container - Target container element.
+         * @param {string} location - State name for booth lookup.
+         */
         renderMockMap(container, location) {
             const booths = CONFIG.MOCK_BOOTHS[location] || CONFIG.MOCK_BOOTHS['_default'];
             const wrapper = Utils.createElement('div', { className: 'mock-map-wrapper' });
-
-            // Mock map visual
             const mapVisual = Utils.createElement('div', { className: 'mock-map' });
+
             let pinsHtml = '';
             booths.forEach((b, i) => {
-                pinsHtml += '<div class="mock-pin" style="top: ' + (25 + i * 22) + '%; left: ' + (20 + i * 25) + '%;" title="' + b.name + '">' +
+                pinsHtml += '<div class="mock-pin" style="top:' + (25 + i * 22) + '%;left:' + (20 + i * 25) + '%;" title="' + b.name + '">' +
                     '<div class="pin-marker">📍</div>' +
-                    '<div class="pin-tooltip">' + b.name + '</div>' +
-                    '</div>';
+                    '<div class="pin-tooltip">' + b.name + '</div></div>';
             });
+
             mapVisual.innerHTML =
-                '<div class="mock-map-bg">' +
-                '<div class="mock-map-grid"></div>' +
+                '<div class="mock-map-bg"><div class="mock-map-grid"></div>' +
                 '<div class="mock-map-label">' +
                 '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1A73E8" stroke-width="2">' +
                 '<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>' +
-                '<circle cx="12" cy="10" r="3"></circle>' +
-                '</svg>' +
-                '<span>' + location + '</span>' +
-                '</div>' +
+                '<circle cx="12" cy="10" r="3"></circle></svg><span>' + location + '</span></div>' +
                 pinsHtml +
-                '<div class="mock-map-badge">🗺️ Mock Map — Demo Mode</div>' +
-                '</div>';
+                '<div class="mock-map-badge">🗺️ Mock Map — Demo Mode</div></div>';
             wrapper.appendChild(mapVisual);
 
-            // Booth list
             const list = Utils.createElement('div', { className: 'booth-list' });
             const listTitle = Utils.createElement('h4', { className: 'booth-list-title' });
             listTitle.textContent = 'Polling Booths in ' + location;
@@ -526,25 +596,35 @@ const GoogleServices = (() => {
                     '</div>' +
                     '<a href="https://www.openstreetmap.org/directions?to=' + booth.lat + '%2C' + booth.lng + '"' +
                     ' target="_blank" rel="noopener" class="booth-directions-btn" aria-label="Get directions to ' + booth.name + '">' +
-                    'Directions ↗' +
-                    '</a>';
+                    'Directions ↗</a>';
                 list.appendChild(card);
                 Utils.animateIn(card, idx * 100);
             });
 
             wrapper.appendChild(list);
 
-            // API mode notice
             const notice = Utils.createElement('div', { className: 'api-notice' });
-            notice.innerHTML = '🔧 <strong>Demo Mode:</strong> Leaflet library not loaded. Using simulated map data.';
+            notice.innerHTML = '🔧 <strong>Demo Mode:</strong> Using simulated map data.';
             wrapper.appendChild(notice);
-
             container.appendChild(wrapper);
         }
     };
 
-    // ── Google Calendar ──────────────────────────────────────────────
+    // ── Google Calendar ───────────────────────────────────────────────
+
+    /**
+     * Calendar reminder module. Generates real Google Calendar event URLs
+     * for election day and voter registration deadline.
+     *
+     * @namespace Calendar
+     */
     const Calendar = {
+
+        /**
+         * Renders calendar reminder buttons into a DOM container.
+         *
+         * @param {string} containerId - ID of the target DOM element.
+         */
         render(containerId) {
             const container = document.getElementById(containerId);
             if (!container) return;
@@ -555,84 +635,119 @@ const GoogleServices = (() => {
             title.innerHTML = '📅 Set Voting Reminders';
 
             const desc = Utils.createElement('p', { className: 'calendar-desc' });
-            desc.textContent = 'Never miss important election dates. Add reminders to your calendar.';
+            desc.textContent = 'Never miss important election dates. Add reminders directly to Google Calendar.';
 
             wrapper.appendChild(title);
             wrapper.appendChild(desc);
 
             const buttons = Utils.createElement('div', { className: 'calendar-buttons' });
 
-            // Voting Day Reminder
-            const voteBtn = createReminderButton(
+            buttons.appendChild(createReminderButton(
                 '🗳️ Voting Day Reminder',
                 CONFIG.ELECTION_DATE,
                 CONFIG.ELECTION_NAME,
-                'Remember to vote today! Carry your Voter ID and visit your assigned polling booth. Polling hours: 7 AM - 6 PM.',
+                'Remember to vote today! Carry your Voter ID and visit your assigned polling booth. Polling hours: 7 AM – 6 PM.',
                 'vote-reminder-btn'
-            );
-            buttons.appendChild(voteBtn);
+            ));
 
-            // Registration Deadline
-            const regBtn = createReminderButton(
+            buttons.appendChild(createReminderButton(
                 '📝 Registration Deadline',
                 CONFIG.REGISTRATION_DEADLINE,
                 'Voter Registration Deadline',
                 'Last date to submit voter registration application. Visit nvsp.in or your local ERO office.',
                 'reg-reminder-btn'
-            );
-            buttons.appendChild(regBtn);
+            ));
+
+            buttons.appendChild(createReminderButton(
+                '📋 Voter List Publication',
+                CONFIG.VOTER_LIST_PUBLICATION,
+                'Voter Roll Publication Date',
+                'Check if your name appears on the final voter roll at voters.eci.gov.in.',
+                'roll-reminder-btn'
+            ));
 
             wrapper.appendChild(buttons);
             container.appendChild(wrapper);
         }
     };
 
+    /**
+     * Creates a calendar reminder button that opens Google Calendar on click.
+     *
+     * @param {string} label - Button display text.
+     * @param {string} date - ISO date string (YYYY-MM-DD).
+     * @param {string} title - Calendar event title.
+     * @param {string} description - Calendar event description.
+     * @param {string} id - DOM id for the button.
+     * @returns {HTMLButtonElement} Configured button element.
+     */
     function createReminderButton(label, date, title, description, id) {
         const btn = Utils.createElement('button', {
             className: 'reminder-btn',
             id: id,
             'aria-label': label
         });
-        btn.innerHTML = '<span class="reminder-icon">📅</span><span>' + label + '</span><span class="reminder-date">' + Utils.formatDate(date) + '</span>';
+        btn.innerHTML =
+            '<span class="reminder-icon">📅</span>' +
+            '<span>' + label + '</span>' +
+            '<span class="reminder-date">' + Utils.formatDate(date) + '</span>';
 
         btn.addEventListener('click', () => {
+            logEvent('calendar_reminder_clicked', { event_title: title, date });
             if (CONFIG.GOOGLE_CALENDAR_ENABLED) {
                 openGoogleCalendar(date, title, description);
             }
-            // Visual feedback
-            showMockCalendarConfirm(btn, date, title);
+            showCalendarConfirm(btn, date, title);
         });
         return btn;
     }
 
+    /**
+     * Opens a pre-filled Google Calendar event creation page in a new tab.
+     *
+     * @param {string} date - ISO date string (YYYY-MM-DD) for the event.
+     * @param {string} title - Event title.
+     * @param {string} description - Event description/notes.
+     */
     function openGoogleCalendar(date, title, description) {
         const startDate = date.replace(/-/g, '');
-        const endDate = startDate; // All-day event
-        const url = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent(title) + '&dates=' + startDate + '/' + endDate + '&details=' + encodeURIComponent(description) + '&sf=true';
+        const url = 'https://calendar.google.com/calendar/render?action=TEMPLATE' +
+            '&text=' + encodeURIComponent(title) +
+            '&dates=' + startDate + '/' + startDate +
+            '&details=' + encodeURIComponent(description) +
+            '&sf=true';
         window.open(url, '_blank', 'noopener');
     }
 
-    function showMockCalendarConfirm(btn, date, title) {
-        // Track state directly on button to avoid closure issues
+    /**
+     * Temporarily changes a reminder button to a "confirmed" state,
+     * then restores the original label after 2 seconds.
+     *
+     * @param {HTMLButtonElement} btn - The reminder button.
+     * @param {string} date - ISO date string shown in toast.
+     * @param {string} title - Event title shown in toast.
+     */
+    function showCalendarConfirm(btn, date, title) {
         if (btn._isConfirming) return;
         btn._isConfirming = true;
 
         const originalHTML = btn.innerHTML;
         btn.classList.add('reminder-confirmed');
-        btn.innerHTML = '<span class="reminder-icon">✅</span><span>Added to Calendar</span>';
+        btn.innerHTML = '<span class="reminder-icon">✅</span><span>Opening Google Calendar…</span>';
 
-        // Show toast
-        showToast('📅 "' + title + '" added for ' + Utils.formatDate(date));
+        Utils.showToast('📅 "' + title + '" — opening for ' + Utils.formatDate(date));
 
         setTimeout(() => {
             btn._isConfirming = false;
             btn.classList.remove('reminder-confirmed');
-            if (btn.isConnected) {
-                btn.innerHTML = originalHTML;
-            }
+            if (btn.isConnected) btn.innerHTML = originalHTML;
         }, 2000);
     }
 
+    // ── Init ──────────────────────────────────────────────────────────
 
-    return { Maps, Calendar };
+    // Auto-init Firebase Analytics when module loads
+    initFirebaseAnalytics();
+
+    return { Maps, Calendar, logEvent, initFirebaseAnalytics };
 })();
