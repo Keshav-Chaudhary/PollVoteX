@@ -137,36 +137,6 @@ const App = (() => {
         // Run Inference Engine (Decision Pipeline)
         currentResult = DecisionEngine.analyze(currentInput);
 
-        // Generate explainability layer
-        currentResult.explanation = DecisionEngine.explainDecision(currentInput, currentResult);
-
-        // Merge persona & scenario steps
-        const personaSteps = Personas.getPersonaSteps(persona, currentInput.location);
-        const scenarioSteps = Personas.getScenarioSteps(scenario);
-        if (personaSteps.length > 0) {
-            currentResult.journeySteps = currentResult.journeySteps.concat(personaSteps);
-        }
-        if (scenarioSteps.length > 0) {
-            currentResult.journeySteps = currentResult.journeySteps.concat(scenarioSteps);
-        }
-
-        // Normalize: only the first non-completed step should be 'active'
-        let foundActive = false;
-        currentResult.journeySteps.forEach(step => {
-            if (step.status === 'completed') return;
-            if (!foundActive) {
-                step.status = 'active';
-                foundActive = true;
-            } else {
-                step.status = 'pending';
-            }
-        });
-
-        // Merge persona & scenario checklists
-        const personaChecklist = Personas.getPersonaChecklist(persona);
-        const scenarioChecklist = Personas.getScenarioChecklist(scenario);
-        currentResult.checklist = currentResult.checklist.concat(personaChecklist, scenarioChecklist);
-
         // Save session
         Utils.Session.save(CONFIG.SESSION_KEY, { input: currentInput, timestamp: Date.now() });
 

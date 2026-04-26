@@ -12,6 +12,8 @@ const DecisionEngine = (() => {
      * @property {number} age
      * @property {string} location
      * @property {string} registrationStatus
+     * @property {string} [persona]
+     * @property {string} [scenario]
      */
 
     /**
@@ -24,16 +26,43 @@ const DecisionEngine = (() => {
             throw new Error('Invalid engine input: context object required.');
         }
 
-        const { age, location, registrationStatus } = userInput;
+        const { age, location, registrationStatus, persona, scenario } = userInput;
         const userType = determineUserType(age, registrationStatus);
+
+        let journeySteps = generateJourneySteps(userType, age, location);
+        let checklist = generateChecklist(userType, location);
+
+        // Persona & Scenario Integration
+        if (typeof Personas !== 'undefined') {
+            const personaSteps = Personas.getPersonaSteps(persona || 'default', location);
+            const scenarioSteps = Personas.getScenarioSteps(scenario || 'none');
+            journeySteps = journeySteps.concat(personaSteps, scenarioSteps);
+
+            const personaChecklist = Personas.getPersonaChecklist(persona || 'default');
+            const scenarioChecklist = Personas.getScenarioChecklist(scenario || 'none');
+            checklist = checklist.concat(personaChecklist, scenarioChecklist);
+        }
+
+        // Normalize steps: the first non-completed step should be 'active'
+        let foundActive = false;
+        journeySteps.forEach(step => {
+            if (step.status === 'completed') return;
+            if (!foundActive) {
+                step.status = 'active';
+                foundActive = true;
+            } else {
+                step.status = 'pending';
+            }
+        });
         
         const result = {
             userType,
             greeting: generateGreeting(userType, age, location),
-            journeySteps: generateJourneySteps(userType, age, location),
-            checklist: generateChecklist(userType, location),
+            journeySteps,
+            checklist,
             timelineEvents: generateTimeline(userType, location),
-            guidance: generateGuidance(userType, age)
+            guidance: generateGuidance(userType, age),
+            explanation: explainDecision(userInput, { userType })
         };
 
         return Object.freeze(result);
