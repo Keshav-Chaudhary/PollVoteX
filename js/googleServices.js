@@ -78,6 +78,31 @@ const GoogleServices = (() => {
         }
     }
 
+    // ── Google Maps API Integration ────────────────────────────────
+    async function fetchGoogleRoute(fromLat, fromLng, toLat, toLng) {
+        if (typeof google === 'undefined') return null;
+        const directionsService = new google.maps.DirectionsService();
+        
+        return new Promise((resolve) => {
+            directionsService.route({
+                origin: new google.maps.LatLng(fromLat, fromLng),
+                destination: new google.maps.LatLng(toLat, toLng),
+                travelMode: google.maps.TravelMode.DRIVING,
+            }, (result, status) => {
+                if (status === 'OK') {
+                    const route = result.routes[0].legs[0];
+                    resolve({
+                        geometry: result.routes[0].overview_path.map(p => [p.lat(), p.lng()]),
+                        distance: route.distance.value / 1000,
+                        duration: Math.round(route.duration.value / 60)
+                    });
+                } else {
+                    resolve(null);
+                }
+            });
+        });
+    }
+
     // ── Maps ─────────────────────────────────────────────────────────
     const Maps = {
         render(containerId, location) {
@@ -85,12 +110,44 @@ const GoogleServices = (() => {
             if (!container) return;
             container.innerHTML = '';
 
-            // Always use Leaflet — no Google dependency
-            if (typeof L !== 'undefined') {
+            if (CONFIG.USE_REAL_APIS && typeof google !== 'undefined') {
+                this.renderGoogleMap(container, location);
+            } else if (typeof L !== 'undefined') {
                 this.renderLeafletMap(container, location);
             } else {
                 this.renderMockMap(container, location);
             }
+        },
+
+        renderGoogleMap(container, location) {
+            const mapId = 'google-map-' + Utils.generateId('map');
+            const booths = CONFIG.MOCK_BOOTHS[location] || CONFIG.MOCK_BOOTHS['_default'];
+            
+            const mapDiv = Utils.createElement('div', { 
+                id: mapId, 
+                className: 'google-map-element',
+                style: 'height: 400px; width: 100%; border-radius: 12px;'
+            });
+            container.appendChild(mapDiv);
+
+            const map = new google.maps.Map(mapDiv, {
+                center: { lat: CONFIG.MAP_DEFAULT_CENTER[0], lng: CONFIG.MAP_DEFAULT_CENTER[1] },
+                zoom: CONFIG.MAP_DEFAULT_ZOOM,
+                mapId: 'POLLVOTEX_MAP_ID' // Required for advanced markers
+            });
+
+            booths.forEach(booth => {
+                new google.maps.Marker({
+                    position: { lat: booth.lat, lng: booth.lng },
+                    map: map,
+                    title: booth.name,
+                    animation: google.maps.Animation.DROP
+                });
+            });
+
+            const listContainer = Utils.createElement('div', { className: 'booth-list' });
+            container.appendChild(listContainer);
+            this.renderBoothList(listContainer, booths, -1);
         },
 
         renderLeafletMap(container, location) {

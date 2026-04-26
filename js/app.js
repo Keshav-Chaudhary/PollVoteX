@@ -9,30 +9,37 @@ const App = (() => {
     let currentResult = null;
     let currentInput = null;
 
+    /**
+     * Bootstraps the application modules.
+     */
     function init() {
-        // Apply High Contrast (Dark) theme by default if no preference is saved
-        const savedA11y = Utils.Session.load('pollvotex_a11y');
-        if (!savedA11y || savedA11y.highContrast === undefined) {
-            document.body.classList.add('high-contrast');
-        }
+        try {
+            // Apply High Contrast (Dark) theme by default if no preference is saved
+            const savedA11y = Utils.Session.load('pollvotex_a11y');
+            if (!savedA11y || savedA11y.highContrast === undefined) {
+                document.body.classList.add('high-contrast');
+            }
 
-        I18n.init();
-        Accessibility.init();
-        Voice.init();
-        setupForm();
-        setupAccessibilityButtons();
-        setupNavigation();
-        setupLanguageSelector();
-        setupVoiceButtons();
-        registerServiceWorker();
-        setupPrivacyLinks();
-        Assistant.render('assistant-container');
-        initClock();
+            I18n.init();
+            Accessibility.init();
+            Voice.init();
+            setupForm();
+            setupAccessibilityButtons();
+            setupNavigation();
+            setupLanguageSelector();
+            setupVoiceButtons();
+            registerServiceWorker();
+            setupPrivacyLinks();
+            Assistant.render('assistant-container');
+            initClock();
 
-        // Restore session if exists
-        const saved = Utils.Session.load(CONFIG.SESSION_KEY);
-        if (saved && saved.input) {
-            restoreSession(saved);
+            // Restore session
+            const saved = Utils.Session.load(CONFIG.SESSION_KEY);
+            if (saved && saved.input) restoreSession(saved);
+
+            Utils.logger.info('App initialized successfully.');
+        } catch (error) {
+            Utils.logger.error('Critical boot failure:', error);
         }
     }
 
@@ -51,6 +58,11 @@ const App = (() => {
                 opt.textContent = state;
                 locationSelect.appendChild(opt);
             });
+        }
+
+        // Initialize Google Places Autocomplete if API is real
+        if (CONFIG.USE_REAL_APIS && locationSelect) {
+            GoogleCloudIntegration.Places.initAutocomplete(locationSelect);
         }
 
         // Populate persona dropdown
@@ -111,7 +123,10 @@ const App = (() => {
 
         if (!ageResult.valid || !locResult.valid || !regResult.valid) return;
 
-        currentInput = {
+        try {
+            Utils.logger.info('Processing user submission...');
+            
+            currentInput = {
             age: ageResult.value,
             location: locResult.value,
             registrationStatus: regResult.value,
@@ -169,6 +184,11 @@ const App = (() => {
         // Apply simple language if active
         if (Accessibility.getState().simpleLanguage) {
             Accessibility.applySimpleLanguage(document.getElementById('results-section'));
+        }
+
+        } catch (err) {
+            Utils.logger.error('Journey generation failed:', err);
+            Utils.showToast('An error occurred while building your journey.');
         }
     }
 

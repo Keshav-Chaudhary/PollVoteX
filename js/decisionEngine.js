@@ -7,10 +7,27 @@
 const DecisionEngine = (() => {
     'use strict';
 
+    /**
+     * @typedef {Object} UserInput
+     * @property {number} age
+     * @property {string} location
+     * @property {string} registrationStatus
+     */
+
+    /**
+     * Analyzes user input to generate a personalized journey.
+     * @param {UserInput} userInput 
+     * @returns {Object} The complete journey payload.
+     */
     function analyze(userInput) {
+        if (!userInput || typeof userInput !== 'object') {
+            throw new Error('Invalid engine input: context object required.');
+        }
+
         const { age, location, registrationStatus } = userInput;
         const userType = determineUserType(age, registrationStatus);
-        return {
+        
+        const result = {
             userType,
             greeting: generateGreeting(userType, age, location),
             journeySteps: generateJourneySteps(userType, age, location),
@@ -18,6 +35,8 @@ const DecisionEngine = (() => {
             timelineEvents: generateTimeline(userType, location),
             guidance: generateGuidance(userType, age)
         };
+
+        return Object.freeze(result);
     }
 
     function determineUserType(age, status) {

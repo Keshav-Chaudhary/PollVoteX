@@ -5,7 +5,19 @@
  */
 const Utils = (() => {
     'use strict';
+    
+    /** @namespace */
+    const logger = {
+        info: (msg) => console.log(`%c[PVX-INFO] ${msg}`, 'color: #1A73E8'),
+        error: (msg, err) => console.error(`%c[PVX-ERROR] ${msg}`, 'color: #D93025', err),
+        warn: (msg) => console.warn(`%c[PVX-WARN] ${msg}`, 'color: #F9AB00')
+    };
 
+    /**
+     * Sanitizes input to prevent XSS.
+     * @param {string} str - The raw input string.
+     * @returns {string} - The safe, encoded string.
+     */
     function sanitizeInput(str) {
         if (typeof str !== 'string') return '';
         return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -13,6 +25,11 @@ const Utils = (() => {
             .trim().slice(0, CONFIG.MAX_INPUT_LENGTH);
     }
 
+    /**
+     * Validates age within legal and biological boundaries.
+     * @param {string|number} input - Age input.
+     * @returns {object} Validation result object.
+     */
     function validateAge(input) {
         const age = parseInt(input, 10);
         if (isNaN(age) || age < 1 || age > 150) {
@@ -95,6 +112,13 @@ const Utils = (() => {
         }, delay);
     }
 
+    /**
+     * Enhanced DOM element creator.
+     * @param {string} tag - HTML tag.
+     * @param {Object} attrs - Attributes and event listeners.
+     * @param {Array<Node|string>} children - Child elements or text.
+     * @returns {HTMLElement}
+     */
     function createElement(tag, attrs = {}, children = []) {
         const el = document.createElement(tag);
         Object.entries(attrs).forEach(([key, val]) => {
@@ -132,5 +156,5 @@ const Utils = (() => {
         toast.timer = setTimeout(() => toast.classList.remove('toast-show'), duration);
     }
 
-    return { sanitizeInput, validateAge, validateLocation, validateRegistration, formatDate, daysUntil, turnsEighteenDate, debounce, generateId, Session, animateIn, createElement, showToast };
+    return { sanitizeInput, validateAge, validateLocation, validateRegistration, formatDate, daysUntil, turnsEighteenDate, debounce, generateId, Session, animateIn, createElement, showToast, logger };
 })();

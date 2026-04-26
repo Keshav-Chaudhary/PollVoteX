@@ -8,7 +8,7 @@
 const CONFIG = {
     // ── API Mode Toggle ──────────────────────────────────────────────
     // Set to true to use real Google APIs. Set to false for mock/demo mode.
-    USE_REAL_APIS: false,
+    USE_REAL_APIS: true,
 
     // ── Google Maps ──────────────────────────────────────────────────
     // Required when USE_REAL_APIS is true.

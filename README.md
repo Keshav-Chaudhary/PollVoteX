@@ -38,9 +38,10 @@ PollVoteX is not just another election information website — it's a **navigati
 | 🗺️ **Journey Tracker** | Visual step-by-step navigator with progress tracking |
 | ✅ **Dynamic Checklist** | Interactive preparation checklist with session persistence |
 | 📅 **Timeline Engine** | Election milestone timeline with countdown |
-| 🤖 **Smart Assistant** | Chat-style Q&A with curated election knowledge base |
+| 🤖 **Sophisticated AI Assistant** | Intent-based natural language simulation with context memory |
 | 📍 **Polling Booth Finder** | Mock/real Google Maps integration |
 | 🔔 **Vote Reminders** | Mock/real Google Calendar integration |
+| ☁️ **Google Cloud Integration** | Native Google Maps JavaScript API, Directions Service, and Geocoding |
 | ⏱️ **Next Best Action** | Always-visible widget showing the most important next step |
 | 🧑‍🤝‍🧑 **Community Personas** | 7 personas with tailored guidance (student, senior, NRI, etc.) |
 | 🧭 **Scenario-Based Guidance** | 7 real-life scenarios (moved city, lost ID, first vote, etc.) |

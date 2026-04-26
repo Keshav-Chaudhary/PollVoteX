@@ -35,6 +35,8 @@ PromptWars/
 │   ├── checklist.js        # Interactive checklist with progress tracking
 │   ├── timeline.js         # Election timeline with date calculations
 │   ├── assistant.js        # AI-powered chat assistant (Intercom-style)
+│   ├── aiAssistant.js      # Advanced Intent-based AI logic (Simulated LLM)
+│   ├── googleCloudIntegration.js # Google Maps SDK, Places Autocomplete, Geocoding, and Directions |
 │   ├── googleServices.js   # Google Maps & Calendar integration (mock/real toggle)
 │   ├── accessibility.js    # Accessibility toggles (simple language, high contrast, etc.)
 │   ├── tests.js            # Automated test suite (Vercel-style UI)
