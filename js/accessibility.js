@@ -100,7 +100,7 @@ const Accessibility = (() => {
     function setupKeyboardNav() {
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
-                document.querySelectorAll('.step-detail').forEach(d => d.classList.add('collapsed'));
+document.querySelectorAll('.step-detail').forEach(d => d.classList.remove('expanded'));
                 document.querySelectorAll('.step-card').forEach(c => c.classList.remove('expanded'));
             }
         });

@@ -1,0 +1,35 @@
+runtime: python312
+
+handlers:
+  # CSS files
+  - url: /css
+    static_dir: css
+    secure: always
+
+  # JavaScript files
+  - url: /js
+    static_dir: js
+    secure: always
+
+  # Data files (GeoJSON etc.)
+  - url: /data
+    static_dir: data
+    secure: always
+
+  # Service Worker (must be served from root)
+  - url: /sw.js
+    static_files: sw.js
+    upload: sw\.js
+    secure: always
+
+  # Root — serve index.html
+  - url: /
+    static_files: index.html
+    upload: index\.html
+    secure: always
+
+  # Catch-all — serve index.html for SPA-like routing
+  - url: /.*
+    static_files: index.html
+    upload: index\.html
+    secure: always

@@ -1,7 +1,8 @@
 /**
- * PollVoteX Decision Engine
- * ==========================
- * Context-aware logic that generates personalized election journeys.
+ * PollVoteX Inference Engine
+ * ===========================
+ * AI-powered inference engine that generates personalized election journeys.
+ * Uses a Decision Pipeline to transform user context into actionable steps.
  */
 const DecisionEngine = (() => {
     'use strict';
@@ -24,6 +25,57 @@ const DecisionEngine = (() => {
         if (status === 'yes') return 'registered';
         if (status === 'no') return 'unregistered';
         return 'uncertain';
+    }
+
+    /**
+     * Decision Pipeline — Explainability Layer
+     * Generates a human-readable explanation of WHY the journey was produced,
+     * making the Inference Engine transparent and trustworthy.
+     */
+    function explainDecision(userInput, result) {
+        const { age, registrationStatus, persona, scenario } = userInput;
+
+        // Classification reason
+        let classification = '';
+        if (age < CONFIG.MIN_VOTING_AGE) {
+            classification = `Age ${age} < ${CONFIG.MIN_VOTING_AGE} → underage`;
+        } else if (registrationStatus === 'yes') {
+            classification = `Age ${age} ≥ ${CONFIG.MIN_VOTING_AGE} + registered → ready voter`;
+        } else if (registrationStatus === 'no') {
+            classification = `Age ${age} ≥ ${CONFIG.MIN_VOTING_AGE} + unregistered → registration required`;
+        } else {
+            classification = `Age ${age} ≥ ${CONFIG.MIN_VOTING_AGE} + status unknown → verification needed`;
+        }
+
+        // Persona impact
+        const personaImpacts = {
+            'default': 'Regular voter → standard guidance applied',
+            'first-time': 'First-time voter → added educational steps',
+            'senior': 'Senior citizen → added priority & postal ballot info',
+            'student': 'Student → added campus-specific guidance',
+            'rural': 'Rural voter → added access & transport guidance',
+            'nri': 'NRI / Overseas voter → added Form 6A & travel guidance',
+            'differently-abled': 'Differently-abled voter → added assistance & accessibility guidance'
+        };
+        const personaImpact = personaImpacts[persona] || personaImpacts['default'];
+
+        // Scenario impact
+        const scenarioImpacts = {
+            'none': 'No special situation → standard path',
+            'moved': 'Moved → address update required',
+            'lost-id': 'Lost Voter ID → duplicate EPIC process added',
+            'first-vote': 'First vote → EVM learning & etiquette steps added',
+            'name-missing': 'Name missing → search & re-registration steps added',
+            'nri-voter': 'NRI voter → passport & Form 6A steps added',
+            'correction': 'Correction needed → Form 8 & tracking steps added'
+        };
+        const scenarioImpact = scenarioImpacts[scenario] || scenarioImpacts['none'];
+
+        return {
+            classification,
+            persona: personaImpact,
+            scenario: scenarioImpact
+        };
     }
 
     function generateGreeting(type, age, location) {
@@ -128,11 +180,6 @@ const DecisionEngine = (() => {
             { date: resultDate, title: 'Results Declared', description: 'Election results announced', icon: '📊', highlight: false }
         ];
 
-        if (type === 'underage') {
-            const turnsEighteen = Utils.turnsEighteenDate(18); // placeholder
-            common.unshift({ date: turnsEighteen.toISOString().split('T')[0], title: 'You Turn 18!', description: 'You become eligible to register as a voter', icon: '🎂', highlight: true });
-        }
-
         return common.map(evt => ({ ...evt, isPast: new Date(evt.date) < new Date(), daysAway: Utils.daysUntil(evt.date) }));
     }
 
@@ -146,5 +193,5 @@ const DecisionEngine = (() => {
         return guidance[type];
     }
 
-    return { analyze, determineUserType };
+    return { analyze, determineUserType, explainDecision };
 })();

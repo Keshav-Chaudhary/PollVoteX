@@ -32,6 +32,11 @@ const CONFIG = {
     SESSION_KEY: 'pollvotex_session',
     MAX_INPUT_LENGTH: 100,
 
+    // ── Map Settings ─────────────────────────────────────────────────
+    MAP_DEFAULT_CENTER: [20.5937, 78.9629], // India center
+    MAP_DEFAULT_ZOOM: 5,
+    MAP_BOOTH_ZOOM: 12,
+
     // ── Indian States (Whitelist for validation) ─────────────────────
     STATES: [
         'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar',

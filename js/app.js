@@ -10,6 +10,12 @@ const App = (() => {
     let currentInput = null;
 
     function init() {
+        // Apply High Contrast (Dark) theme by default if no preference is saved
+        const savedA11y = Utils.Session.load('pollvotex_a11y');
+        if (!savedA11y || savedA11y.highContrast === undefined) {
+            document.body.classList.add('high-contrast');
+        }
+
         I18n.init();
         Accessibility.init();
         Voice.init();
@@ -19,7 +25,9 @@ const App = (() => {
         setupLanguageSelector();
         setupVoiceButtons();
         registerServiceWorker();
+        setupPrivacyLinks();
         Assistant.render('assistant-container');
+        initClock();
 
         // Restore session if exists
         const saved = Utils.Session.load(CONFIG.SESSION_KEY);
@@ -50,7 +58,9 @@ const App = (() => {
             Personas.PERSONA_LIST.forEach(p => {
                 const opt = document.createElement('option');
                 opt.value = p.id;
-                opt.textContent = I18n.t(Personas.getPersonaLabelKey(p.id));
+                const key = Personas.getPersonaLabelKey(p.id);
+                opt.setAttribute('data-i18n', key);
+                opt.textContent = I18n.t(key);
                 personaSelect.appendChild(opt);
             });
         }
@@ -60,7 +70,9 @@ const App = (() => {
             Personas.SCENARIO_LIST.forEach(s => {
                 const opt = document.createElement('option');
                 opt.value = s.id;
-                opt.textContent = I18n.t(Personas.getScenarioLabelKey(s.id));
+                const key = Personas.getScenarioLabelKey(s.id);
+                opt.setAttribute('data-i18n', key);
+                opt.textContent = I18n.t(key);
                 scenarioSelect.appendChild(opt);
             });
         }
@@ -107,8 +119,11 @@ const App = (() => {
             scenario: scenario
         };
 
-        // Run decision engine
+        // Run Inference Engine (Decision Pipeline)
         currentResult = DecisionEngine.analyze(currentInput);
+
+        // Generate explainability layer
+        currentResult.explanation = DecisionEngine.explainDecision(currentInput, currentResult);
 
         // Merge persona & scenario steps
         const personaSteps = Personas.getPersonaSteps(persona, currentInput.location);
@@ -147,7 +162,8 @@ const App = (() => {
         const resultsSection = document.getElementById('results-section');
         if (resultsSection) {
             resultsSection.style.display = 'block';
-            resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // Use a slight delay to ensure rendering is complete for the scroll
+            setTimeout(() => resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
         }
 
         // Apply simple language if active
@@ -185,6 +201,9 @@ const App = (() => {
             `;
             Utils.animateIn(countdown, 100);
         }
+
+        // Explainability layer
+        renderExplanation(result);
 
         // Next Best Action widget
         renderNextAction(result);
@@ -227,6 +246,42 @@ const App = (() => {
             </div>
         `;
         Utils.animateIn(container, 200);
+    }
+
+    function renderExplanation(result) {
+        const container = document.getElementById('decision-explainability');
+        if (!container || !result.explanation) return;
+
+        const exp = result.explanation;
+        container.innerHTML = `
+            <div class="explainability-card">
+                <h3 class="explainability-title">${I18n.t('explainabilityTitle')}</h3>
+                <ul class="explainability-list">
+                    <li class="explainability-item">
+                        <span class="explainability-bullet">🧠</span>
+                        <div>
+                            <strong>${I18n.t('explainabilityClassification')}:</strong>
+                            <span>${exp.classification}</span>
+                        </div>
+                    </li>
+                    <li class="explainability-item">
+                        <span class="explainability-bullet">👤</span>
+                        <div>
+                            <strong>${I18n.t('explainabilityPersona')}:</strong>
+                            <span>${exp.persona}</span>
+                        </div>
+                    </li>
+                    <li class="explainability-item">
+                        <span class="explainability-bullet">📍</span>
+                        <div>
+                            <strong>${I18n.t('explainabilityScenario')}:</strong>
+                            <span>${exp.scenario}</span>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        `;
+        Utils.animateIn(container, 150);
     }
 
     function renderTrustLayer() {
@@ -310,12 +365,23 @@ const App = (() => {
         if (selector) {
             selector.addEventListener('change', (e) => {
                 I18n.setLanguage(e.target.value);
-                // Re-render if results are showing
-                if (currentResult && currentInput) {
-                    renderResults(currentResult, currentInput);
+                // Re-calculate the result to get new translations from the engine
+                if (currentInput) {
+                    handleSubmit();
                 }
             });
         }
+    }
+
+    function setupPrivacyLinks() {
+        // Hook up any element with the id nav-privacy-btn or class privacy-link
+        const btns = document.querySelectorAll('#nav-privacy-btn, .privacy-link');
+        btns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                renderPrivacyPage();
+            });
+        });
     }
 
     function setupVoiceButtons() {
@@ -337,14 +403,125 @@ const App = (() => {
     }
 
     function setupNavigation() {
-        document.querySelectorAll('.nav-link').forEach(link => {
+        const links = document.querySelectorAll('.nav-link');
+        const sections = [];
+
+        links.forEach(link => {
+            const targetId = link.getAttribute('href').slice(1);
+            const target = document.getElementById(targetId);
+            if (target) sections.push({ link, target });
+
             link.addEventListener('click', (e) => {
                 e.preventDefault();
-                const targetId = link.getAttribute('href').slice(1);
-                const target = document.getElementById(targetId);
-                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                
+                // Manual override for active class on click
+                links.forEach(l => l.classList.remove('active'));
+                link.classList.add('active');
             });
         });
+
+        // Intersection Observer for scroll tracking
+        if ('IntersectionObserver' in window) {
+            const observerOptions = {
+                root: null,
+                rootMargin: '-20% 0px -70% 0px', // Trigger when section is near top
+                threshold: 0
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const id = entry.target.getAttribute('id');
+                        links.forEach(link => {
+                            const isActive = link.getAttribute('href') === `#${id}`;
+                            link.classList.toggle('active', isActive);
+                            if (isActive) link.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                        });
+                    }
+                });
+            }, observerOptions);
+
+            sections.forEach(s => observer.observe(s.target));
+        }
+    }
+
+    function initClock() {
+        const clockBtn = document.getElementById('clock-toggle-btn');
+        const clockDisplay = document.getElementById('clock-display');
+        if (!clockBtn || !clockDisplay) return;
+
+        function updateClock() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('en-IN', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            });
+            clockDisplay.textContent = timeString;
+        }
+
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        clockBtn.addEventListener('click', () => {
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('en-IN', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            const timeStr = now.toLocaleTimeString('en-IN', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            });
+            Utils.showToast(`📅 ${dateStr} — ${timeStr}`);
+        });
+    }
+
+    function renderPrivacyPage() {
+        const resultsSection = document.getElementById('results-section');
+        if (!resultsSection) return;
+
+        // Hide section navigation when viewing privacy to prevent confusion
+        const sectionNav = document.getElementById('section-nav');
+        if (sectionNav) sectionNav.style.display = 'none';
+
+        resultsSection.style.display = 'block';
+        resultsSection.innerHTML = `
+            <div class="privacy-container animate-fade-in-up">
+                <div class="privacy-header">
+                    <h2>${I18n.t('privacyTitle')}</h2>
+                    <p class="hero-subtitle">${I18n.t('privacyIntro')}</p>
+                </div>
+                <div class="privacy-body">
+                    ${renderPrivacyItem('📍', 'privacyLocationTitle', 'privacyLocationDesc')}
+                    ${renderPrivacyItem('🎙️', 'privacyMicTitle', 'privacyMicDesc')}
+                    ${renderPrivacyItem('💾', 'privacyStorageTitle', 'privacyStorageDesc')}
+                    ${renderPrivacyItem('🛡️', 'privacyTransparency', 'privacyTransparencyDesc')}
+                </div>
+                <div style="text-align:center; margin-top:40px;">
+                    <button class="btn-secondary" style="width:auto;" onclick="location.reload()">← Back to App</button>
+                </div>
+            </div>
+        `;
+        resultsSection.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function renderPrivacyItem(icon, titleKey, descKey) {
+        return `
+            <div class="privacy-item">
+                <div class="privacy-icon-box">${icon}</div>
+                <div class="privacy-content">
+                    <h3>${I18n.t(titleKey)}</h3>
+                    <p>${I18n.t(descKey)}</p>
+                </div>
+            </div>
+        `;
     }
 
     function registerServiceWorker() {
@@ -370,13 +547,16 @@ const App = (() => {
         Utils.Session.clear();
         currentResult = null;
         currentInput = null;
-        document.getElementById('results-section').style.display = 'none';
-        document.getElementById('section-nav').style.display = 'none';
-        document.getElementById('user-input-form').reset();
+        const resultsSection = document.getElementById('results-section');
+        if (resultsSection) resultsSection.style.display = 'none';
+        const sectionNav = document.getElementById('section-nav');
+        if (sectionNav) sectionNav.style.display = 'none';
+        const userForm = document.getElementById('user-input-form');
+        if (userForm) userForm.reset();
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    return { init, runTests, resetSession };
+    return { init, runTests, resetSession, renderPrivacyPage };
 })();
 
 document.addEventListener('DOMContentLoaded', App.init);

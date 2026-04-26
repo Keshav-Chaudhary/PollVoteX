@@ -111,5 +111,26 @@ const Utils = (() => {
         return el;
     }
 
-    return { sanitizeInput, validateAge, validateLocation, validateRegistration, formatDate, daysUntil, turnsEighteenDate, debounce, generateId, Session, animateIn, createElement };
+    function showToast(message, duration = 4000) {
+        let toast = document.getElementById('pvx-toast');
+        if (!toast) {
+            toast = createElement('div', { className: 'toast', id: 'pvx-toast' });
+            document.body.appendChild(toast);
+        }
+
+        // Add message and close button
+        toast.innerHTML = `<span>${message}</span><button class="toast-close" aria-label="Close">&times;</button>`;
+        
+        const closeBtn = toast.querySelector('.toast-close');
+        closeBtn.onclick = () => {
+            toast.classList.remove('toast-show');
+            if (toast.timer) clearTimeout(toast.timer);
+        };
+
+        toast.classList.add('toast-show');
+        if (toast.timer) clearTimeout(toast.timer);
+        toast.timer = setTimeout(() => toast.classList.remove('toast-show'), duration);
+    }
+
+    return { sanitizeInput, validateAge, validateLocation, validateRegistration, formatDate, daysUntil, turnsEighteenDate, debounce, generateId, Session, animateIn, createElement, showToast };
 })();

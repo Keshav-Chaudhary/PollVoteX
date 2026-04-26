@@ -1,0 +1,14 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+README.md
+PROJECT_REPORT.md
+TODO.md
+OpenStreetMap_India.md
+LICENSE
+
+# Misc
+d
+.gcloudignore

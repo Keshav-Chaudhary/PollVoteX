@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/accessibility.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
 </head>
 <body>
 
@@ -31,6 +32,15 @@
                     <option value="hi">हिन्दी</option>
                     <option value="ta">தமிழ்</option>
                 </select>
+
+                <!-- Clock -->
+                <button class="clock-toggle" id="clock-toggle-btn" aria-label="Current time" title="Click for full date and time">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    <span class="clock-display" id="clock-display">--:--:--</span>
+                </button>
 
                 <!-- Dark mode toggle -->
                 <button class="theme-toggle" id="toggle-high-contrast" aria-pressed="false" aria-label="Toggle dark mode" title="Toggle dark mode">
@@ -103,6 +113,12 @@
     <main role="main">
         <!-- ═══ Hero Section ═══ -->
         <section class="hero" id="hero">
+            <!-- Decorative Background Elements -->
+            <div class="hero-visual-bg" aria-hidden="true">
+                <div class="hero-orb orb-1"></div>
+                <div class="hero-orb orb-2"></div>
+                <div class="hero-orb orb-3"></div>
+            </div>
             <div class="container">
                 <h1 class="hero-title">
                     <span data-i18n="heroTitle1">Your</span> <span class="highlight" data-i18n="heroTitleHighlight">Step-by-Step</span><br>
@@ -112,13 +128,13 @@
                     Tell us a few things about yourself, and we'll create a personalized
                     election journey — from eligibility to casting your vote.
                 </p>
+            </div>
 
-                <!-- SVG Wave -->
-                <div class="hero-wave" aria-hidden="true">
-                    <svg viewBox="0 0 1200 120" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M0,0 C150,80 350,0 500,50 C650,100 800,30 1000,60 C1100,75 1150,50 1200,40 L1200,120 L0,120 Z" fill="var(--surface-2)"/>
-                    </svg>
-                </div>
+            <!-- SVG Wave (Moved outside container for full-width spanning) -->
+            <div class="hero-wave" aria-hidden="true">
+                <svg viewBox="0 0 1200 120" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M0,0 C150,80 350,0 500,50 C650,100 800,30 1000,60 C1100,75 1150,50 1200,40 L1200,120 L0,120 Z" fill="var(--bg)"/>
+                </svg>
             </div>
         </section>
 
@@ -194,6 +210,7 @@
         <!-- ═══ Section Navigation ═══ -->
         <nav class="section-nav container" id="section-nav" role="navigation" aria-label="Results sections">
             <a href="#guidance-section" class="nav-link"><span data-i18n="overview">Overview</span></a>
+            <a href="#explainability-section" class="nav-link"><span data-i18n="explainabilityNav">Why?</span></a>
             <a href="#journey-section" class="nav-link"><span data-i18n="journey">Journey</span></a>
             <a href="#checklist-section" class="nav-link"><span data-i18n="checklist">Checklist</span></a>
             <a href="#timeline-section" class="nav-link"><span data-i18n="timeline">Timeline</span></a>
@@ -210,6 +227,11 @@
                 <section class="section" id="guidance-section">
                     <div id="guidance-banner"></div>
                     <div id="election-countdown" class="election-countdown"></div>
+                </section>
+
+                <!-- Explainability -->
+                <section class="section" id="explainability-section">
+                    <div id="decision-explainability"></div>
                 </section>
 
                 <!-- Next Best Action -->
@@ -297,6 +319,7 @@
                 <a href="https://eci.gov.in" target="_blank" rel="noopener">Election Commission of India</a>
                 <a href="https://nvsp.in" target="_blank" rel="noopener">NVSP Portal</a>
                 <a href="https://voters.eci.gov.in" target="_blank" rel="noopener">Voter Helpline</a>
+                <a href="#privacy" class="privacy-link" data-i18n="navPrivacy">Privacy & Data</a>
             </div>
             <p data-i18n="footerDisclaimer">PollVoteX is an educational tool. Always verify information with official sources.</p>
             <p style="margin-top: 4px; opacity: 0.7;" data-i18n="footerPrivacy">No personal data is stored permanently. Session data is cleared when you close the tab.</p>
@@ -314,6 +337,7 @@
     <script src="js/checklist.js"></script>
     <script src="js/timeline.js"></script>
     <script src="js/assistant.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="js/googleServices.js"></script>
     <script src="js/accessibility.js"></script>
     <script src="js/tests.js"></script>

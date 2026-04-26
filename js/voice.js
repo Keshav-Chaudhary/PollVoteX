@@ -66,25 +66,53 @@ const Voice = (() => {
     /** Speech-to-Text: Start listening */
     function listen(callback) {
         if (!recognition) {
-            alert('Speech recognition is not supported in this browser. Please use Chrome.');
+            Utils.showToast('Speech recognition is not supported in this browser.');
             return;
         }
+        
         recognition.lang = getLang();
+
+        recognition.onstart = () => {
+            isListening = true;
+            updateMicButton(true);
+            if (navigator.vibrate) navigator.vibrate(50); // Haptic feedback
+        };
+
         recognition.onresult = (event) => {
             const transcript = event.results[0][0].transcript;
-            isListening = false;
             if (callback) callback(transcript);
         };
+
         recognition.onerror = (event) => {
-            isListening = false;
-            console.warn('Speech recognition error:', event.error);
+            let msg = 'Voice recognition error.';
+            const btn = document.getElementById('voice-input-btn');
+            
+            switch (event.error) {
+                case 'not-allowed':
+                    msg = 'Microphone access denied. Please check your browser site permissions.';
+                    if (btn) btn.classList.add('btn-error-shake');
+                    break;
+                case 'no-speech':
+                    msg = 'No speech detected. Please try again.';
+                    break;
+                case 'network':
+                    msg = 'Network connection error. Voice requires internet.';
+                    break;
+                case 'service-not-allowed':
+                    msg = 'Voice service is not allowed by the browser.';
+                    break;
+            }
+            
+            Utils.showToast(msg);
+            updateMicButton(false);
+            setTimeout(() => { if (btn) btn.classList.remove('btn-error-shake'); }, 500);
         };
+
         recognition.onend = () => {
             isListening = false;
             updateMicButton(false);
         };
-        isListening = true;
-        updateMicButton(true);
+
         recognition.start();
     }
 
@@ -95,6 +123,7 @@ const Voice = (() => {
             btn.setAttribute('aria-label', active ? I18n.t('voiceListening') : I18n.t('voiceAsk'));
         }
     }
+
 
     function stripHTML(html) {
         const tmp = document.createElement('div');

@@ -19,6 +19,7 @@ const I18n = (() => {
             highContrast: 'High Contrast',
             tests: 'Tests',
             langLabel: 'Language',
+            navPrivacy: 'Privacy & Data',
 
             // Hero
             heroTitle1: 'Your',
@@ -60,12 +61,19 @@ const I18n = (() => {
 
             // Section titles
             overview: 'Overview',
+            explainabilityNav: 'Why?',
             journey: 'Journey',
             checklist: 'Checklist',
             timeline: 'Timeline',
             boothFinder: 'Booth Finder',
             reminders: 'Reminders',
             assistant: 'Assistant',
+
+            // Explainability
+            explainabilityTitle: 'Why this journey?',
+            explainabilityClassification: 'Classification',
+            explainabilityPersona: 'Persona Impact',
+            explainabilityScenario: 'Situation Impact',
             yourJourney: 'Your Election Journey',
             journeySubtitle: 'Follow these steps to navigate the election process. Click any step for details.',
             yourChecklist: 'Your Checklist',
@@ -94,6 +102,18 @@ const I18n = (() => {
             footerDisclaimer: 'PollVoteX is an educational tool. Always verify information with official sources.',
             footerPrivacy: 'No personal data is stored permanently. Session data is cleared when you close the tab.',
 
+            // Privacy Page
+            privacyTitle: 'Privacy & Security Center',
+            privacyIntro: 'PollVoteX is built on the principle of "Privacy by Design." We believe your data belongs to you.',
+            privacyLocationTitle: 'Location Services',
+            privacyLocationDesc: 'When you use "Locate Me," we access your GPS coordinates to find the nearest polling booth. This data is processed locally in your browser and sent to the OSRM routing engine for distance calculation. We do not store your location history.',
+            privacyMicTitle: 'Voice & Microphone',
+            privacyMicDesc: 'The microphone is only active when you click the mic button. We use the Web Speech API to convert your speech to text. No audio is ever recorded, saved, or transmitted to external servers.',
+            privacyStorageTitle: 'Data & Storage',
+            privacyStorageDesc: 'We use local session storage to remember your journey progress. This data never leaves your device and is automatically wiped the moment you close the browser tab.',
+            privacyTransparency: '100% Client-Side Processing',
+            privacyTransparencyDesc: 'PollVoteX does not have a database. Your personal context (age, state, persona) is used only to generate your local guide.',
+
             // Validation errors
             errorAge: 'Please enter a valid age between 1 and 150.',
             errorLocation: 'Please select a valid state.',
@@ -116,6 +136,29 @@ const I18n = (() => {
 
             // Adaptive
             needHelp: 'Need help? Switch to simple mode for easier reading.',
+
+            // Dynamic Journey Content (Common)
+            greetUnderage: "You're {age} years old — not yet eligible to vote, but your time is coming! Here's what you need to know about preparing for your future as a voter in {location}.",
+            greetUnregistered: "Welcome! You're eligible to vote in {location}, but you need to register first. Let's get you started with a step-by-step registration guide.",
+            greetRegistered: "Great news! You're a registered voter in {location}. Let's make sure you're fully prepared for Election Day.",
+            greetUncertain: "No worries! Let's first verify your voter registration status in {location}, then guide you through the next steps.",
+            
+            stepEligibility: 'Eligibility Check',
+            stepAgeTimeline: 'Your Voting Timeline',
+            stepDocuments: 'Gather Documents',
+            stepFormFill: 'Fill Registration Form',
+            stepSubmit: 'Submit Application',
+            stepVerify: 'Verification Process',
+            stepVoterId: 'Receive Voter ID (EPIC)',
+            stepBoothLookup: 'Find Polling Booth',
+            stepVotingPrep: 'Voting Day Preparation',
+            stepCastVote: 'Cast Your Vote',
+            
+            descEligibility: 'You meet the minimum age requirement.',
+            descDocuments: 'Collect required documents for registration: Age proof, Address proof, and photos.',
+            descFormFill: 'Complete Form 6 online via nvsp.in or at your local ERO office.',
+            descBoothLookup: 'Locate your assigned polling station in {location}.',
+            descVotingPrep: 'Carry your Voter ID or approved photo ID. Polling: 7 AM - 6 PM.'
         },
 
         hi: {
@@ -161,12 +204,20 @@ const I18n = (() => {
             scenarioCorrection: 'मुझे अपनी जानकारी सुधारनी है',
 
             overview: 'सारांश',
+            explainabilityNav: 'क्यों?',
             journey: 'यात्रा',
             checklist: 'चेकलिस्ट',
             timeline: 'समयरेखा',
             boothFinder: 'बूथ खोजें',
             reminders: 'रिमाइंडर',
             assistant: 'सहायक',
+
+            // Explainability
+            explainabilityTitle: 'यह यात्रा क्यों?',
+            explainabilityClassification: 'वर्गीकरण',
+            explainabilityPersona: 'पर्सोना प्रभाव',
+            explainabilityScenario: 'स्थिति प्रभाव',
+
             yourJourney: 'आपकी चुनाव यात्रा',
             journeySubtitle: 'चुनाव प्रक्रिया को समझने के लिए इन चरणों का पालन करें। विवरण के लिए किसी भी चरण पर क्लिक करें।',
             yourChecklist: 'आपकी चेकलिस्ट',
@@ -208,6 +259,29 @@ const I18n = (() => {
             offlineReady: 'ऐप ऑफलाइन उपलब्ध है',
             offlineNotice: 'आप ऑफलाइन हैं। कुछ सुविधाएँ सीमित हो सकती हैं।',
             needHelp: 'मदद चाहिए? आसान पढ़ने के लिए सरल मोड में बदलें।',
+
+            // Dynamic Journey Content (Common)
+            greetUnderage: "आप {age} साल के हैं — अभी वोट देने के योग्य नहीं हैं, लेकिन आपका समय आ रहा है! {location} में भविष्य के मतदाता के रूप में तैयारी के लिए आपको यह जानना आवश्यक है।",
+            greetUnregistered: "स्वागत है! आप {location} में वोट देने के योग्य हैं, लेकिन आपको पहले पंजीकरण करना होगा।",
+            greetRegistered: "बड़ी खबर! आप {location} में एक पंजीकृत मतदाता हैं। आइए सुनिश्चित करें कि आप चुनाव दिवस के लिए पूरी तरह तैयार हैं।",
+            greetUncertain: "कोई बात नहीं! आइए पहले {location} में आपकी मतदाता पंजीकरण स्थिति सत्यापित करें।",
+
+            stepEligibility: 'पात्रता जांच',
+            stepAgeTimeline: 'आपकी मतदान समयरेखा',
+            stepDocuments: 'दस्तावेज जमा करें',
+            stepFormFill: 'पंजीकरण फॉर्म भरें',
+            stepSubmit: 'आवेदन जमा करें',
+            stepVerify: 'सत्यापन प्रक्रिया',
+            stepVoterId: 'वोटर आईडी (EPIC) प्राप्त करें',
+            stepBoothLookup: 'मतदान केंद्र खोजें',
+            stepVotingPrep: 'चुनाव दिवस की तैयारी',
+            stepCastVote: 'अपना वोट डालें',
+
+            descEligibility: 'आप न्यूनतम आयु आवश्यकता को पूरा करते हैं।',
+            descDocuments: 'पंजीकरण के लिए आवश्यक दस्तावेज एकत्र करें: आयु प्रमाण, पता प्रमाण और फोटो।',
+            descFormFill: 'nvsp.in के माध्यम से या अपने स्थानीय ERO कार्यालय में फॉर्म 6 भरें।',
+            descBoothLookup: '{location} में अपना आवंटित मतदान केंद्र खोजें।',
+            descVotingPrep: 'अपना वोटर आईडी या स्वीकृत फोटो आईडी साथ रखें। मतदान: सुबह 7 - शाम 6 बजे।'
         },
 
         ta: {
@@ -253,12 +327,20 @@ const I18n = (() => {
             scenarioCorrection: 'எனது விவரங்களை திருத்த வேண்டும்',
 
             overview: 'கண்ணோட்டம்',
+            explainabilityNav: 'ஏன்?',
             journey: 'பயணம்',
             checklist: 'பட்டியல்',
             timeline: 'காலவரிசை',
             boothFinder: 'சாவடி தேடல்',
             reminders: 'நினைவூட்டல்கள்',
             assistant: 'உதவியாளர்',
+
+            // Explainability
+            explainabilityTitle: 'இந்த பயணம் ஏன்?',
+            explainabilityClassification: 'வகைப்பாடு',
+            explainabilityPersona: 'பாத்திரம் தாக்கம்',
+            explainabilityScenario: 'சூழல் தாக்கம்',
+
             yourJourney: 'உங்கள் தேர்தல் பயணம்',
             journeySubtitle: 'தேர்தல் செயல்முறையை வழிநடத்த இந்த படிகளைப் பின்பற்றுங்கள்.',
             yourChecklist: 'உங்கள் பட்டியல்',
@@ -300,6 +382,46 @@ const I18n = (() => {
             offlineReady: 'ஆப் ஆஃப்லைனில் கிடைக்கும்',
             offlineNotice: 'நீங்கள் ஆஃப்லைனில் உள்ளீர்கள்.',
             needHelp: 'உதவி வேண்டுமா? எளிதாக படிக்க எளிய பயன்முறைக்கு மாறுங்கள்.',
+
+            // Personas & Scenarios
+            personaDefault: 'வழக்கமான வாக்காளர்',
+            personaFirstTime: 'முதல் முறை வாக்காளர்',
+            personaSenior: 'மூத்த குடிமகன்',
+            personaStudent: 'மாணவர் (வீட்டிலிருந்து தொலைவில்)',
+            personaRural: 'கிராமப்புற வாக்காளர்',
+            personaNRI: 'NRI / வெளிநாட்டு வாக்காளர்',
+            personaDifferentlyAbled: 'மாற்றுத்திறனாளி வாக்காளர்',
+
+            scenarioNone: 'சிறப்பு நிலைமை இல்லை',
+            scenarioMoved: 'நான் வேறு நகரத்திற்கு மாறிவிட்டேன்',
+            scenarioLostID: 'எனது வாக்காளர் அடையாள அட்டை தொலைந்துவிட்டது',
+            scenarioFirstTime: 'நான் முதல் முறையாக வாக்களிக்கிறேன்',
+            scenarioNameMissing: 'வாக்காளர் பட்டியலில் என் பெயர் இல்லை',
+            scenarioNRI: 'நான் வெளிநாட்டில் வசிக்கும் இந்தியர்',
+            scenarioCorrection: 'எனது விவரங்களை திருத்த வேண்டும்',
+
+            // Dynamic Journey Content (Common)
+            greetUnderage: "{age} வயதான நீங்கள் — இன்னும் வாக்களிக்கத் தகுதியடையவில்லை, ஆனால் உங்கள் நேரம் நெருங்குகிறது! {location} இல் எதிர்கால வாக்காளராகத் தயாராவதற்கு நீங்கள் தெரிந்து கொள்ள வேண்டியவை இதோ.",
+            greetUnregistered: "வரவேற்கிறோம்! நீங்கள் {location} இல் வாக்களிக்கத் தகுதியுடையவர், ஆனால் நீங்கள் முதலில் பதிவு செய்ய வேண்டும்.",
+            greetRegistered: "சிறந்த செய்தி! நீங்கள் {location} இல் பதிவுசெய்யப்பட்ட வாக்காளர். தேர்தல் தினத்திற்கு நீங்கள் முழுமையாகத் தயாராக இருப்பதை உறுதி செய்வோம்.",
+            greetUncertain: "கவலைப்பட வேண்டாம்! முதலில் {location} இல் உங்கள் வாக்காளர் பதிவு நிலையைச் சரிபார்ப்போம்.",
+
+            stepEligibility: 'தகுதிச் சரிபார்ப்பு',
+            stepAgeTimeline: 'உங்கள் வாக்களிப்பு காலவரிசை',
+            stepDocuments: 'ஆவணங்களைச் சேகரிக்கவும்',
+            stepFormFill: 'பதிவுப் படிவத்தை நிரப்பவும்',
+            stepSubmit: 'விண்ணப்பத்தைச் சமர்ப்பிக்கவும்',
+            stepVerify: 'சரிபார்ப்பு செயல்முறை',
+            stepVoterId: 'வாக்காளர் அடையாள அட்டையைப் (EPIC) பெறவும்',
+            stepBoothLookup: 'வாக்குச்சாவடியைக் கண்டறியவும்',
+            stepVotingPrep: 'வாக்களிப்பு தினத் தயாரிப்பு',
+            stepCastVote: 'உங்கள் வாக்கைச் செலுத்தவும்',
+
+            descEligibility: 'நீங்கள் குறைந்தபட்ச வயதுத் தகுதியைப் பூர்த்தி செய்கிறீர்கள்.',
+            descDocuments: 'பதிவு செய்வதற்குத் தேவையான ஆவணங்களைச் சேகரிக்கவும்: வயதுச் சான்று, முகவரிச் சான்று மற்றும் புகைப்படங்கள்.',
+            descFormFill: 'nvsp.in வழியாக அல்லது உங்கள் உள்ளூர் ERO அலுவலகத்தில் படிவம் 6-ஐ நிரப்பவும்.',
+            descBoothLookup: '{location} இல் உங்களுக்காக ஒதுக்கப்பட்ட வாக்குச்சாவடியைக் கண்டறியவும்.',
+            descVotingPrep: 'உங்கள் வாக்காளர் அடையாள அட்டை அல்லது அங்கீகரிக்கப்பட்ட புகைப்பட அடையாள அட்டையை எடுத்துச் செல்லுங்கள். வாக்குப்பதிவு: காலை 7 - மாலை 6 மணி.'
         }
     };
 
@@ -316,9 +438,14 @@ const I18n = (() => {
         applyLanguage();
     }
 
-    function t(key) {
-        return (TRANSLATIONS[currentLang] && TRANSLATIONS[currentLang][key]) ||
-               TRANSLATIONS.en[key] || key;
+    function t(key, params = {}) {
+        let text = (TRANSLATIONS[currentLang] && TRANSLATIONS[currentLang][key]) ||
+                   TRANSLATIONS.en[key] || key;
+        
+        Object.keys(params).forEach(p => {
+            text = text.replace(`{${p}}`, params[p]);
+        });
+        return text;
     }
 
     function applyLanguage() {
